@@ -1,0 +1,12 @@
+# Build artifacts
+dist/
+
+# Capacitor native platforms
+android/
+electron/
+
+# Dependencies
+node_modules/
+
+# Local Netlify folder (legacy)
+.netlify

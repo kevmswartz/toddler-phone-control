@@ -1,0 +1,203 @@
+{
+  "specialButtons": [
+    {
+      "id": "kraveTtsButton",
+      "emoji": "\ud83d\udde3\ufe0f",
+      "label": "Krave",
+      "handler": "speakTts",
+      "args": [
+        "I want Krave"
+      ],
+      "thumbnail": "/public/0003800024848.webp",
+      "category": "kidMode-tts",
+      "zone": "quick"
+    },
+    {
+      "id": "findRokuButton",
+      "emoji": "\ud83d\udd0d",
+      "label": "Find Roku",
+      "handler": "checkStatus",
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "disneyPlusButton",
+      "emoji": "\ud83e\uddda",
+      "label": "Disney+",
+      "thumbnail": "/public/06d8Po5VgMWjpiRU0RpZoul-18.webp",
+      "appId": "291097",
+      "appName": "Disney+",
+      "category": "kidMode-content",
+      "zone": "quick"
+    },
+    {
+      "id": "paramountPlusButton",
+      "emoji": "\ud83c\udf1f",
+      "label": "Paramount+",
+      "appId": "31440",
+      "thumbnail": "/public/f7c0cf5003624d98fbe69b2156453e9c.webp",
+      "appName": "Paramount+",
+      "category": "kidMode-content",
+      "zone": "quick"
+    },
+    {
+      "id": "favoriteMacroButton",
+      "emoji": "\u2728",
+      "label": "Magic Button",
+      "handler": "runFavoriteMacro",
+      "category": "kidMode-content",
+      "favoriteLabelId": "favoriteMacroLabel",
+      "zone": "quick"
+    },
+    {
+      "id": "homeButton",
+      "emoji": "\ud83c\udfe0",
+      "label": "Go Home",
+      "handler": "sendKey",
+      "args": [
+        "Home"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "instantReplayButton",
+      "emoji": "\ud83d\udd01",
+      "label": "Do It Again",
+      "handler": "sendKey",
+      "args": [
+        "InstantReplay"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "playPauseButton",
+      "emoji": "\u23ef\ufe0f",
+      "label": "Play / Pause",
+      "handler": "sendKey",
+      "args": [
+        "Play"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "upButton",
+      "emoji": "\u2b06\ufe0f",
+      "label": "Up",
+      "handler": "sendKey",
+      "args": [
+        "Up"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "leftButton",
+      "emoji": "\u2b05\ufe0f",
+      "label": "Left",
+      "handler": "sendKey",
+      "args": [
+        "Left"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "selectButton",
+      "emoji": "\ud83c\udd97",
+      "label": "Select",
+      "handler": "sendKey",
+      "args": [
+        "Select"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "rightButton",
+      "emoji": "\u27a1\ufe0f",
+      "label": "Right",
+      "handler": "sendKey",
+      "args": [
+        "Right"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "downButton",
+      "emoji": "\u2b07\ufe0f",
+      "label": "Down",
+      "handler": "sendKey",
+      "args": [
+        "Down"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
+      "id": "powerButton",
+      "emoji": "\u23fb",
+      "label": "Power",
+      "handler": "sendKey",
+      "args": [
+        "PowerOff"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    }
+  ],
+  "quickLaunch": [
+    {
+      "id": "babySharkLaunch",
+      "label": "Baby Shark Theme",
+      "type": "youtube",
+      "videoId": "OBqZDyVlFP8",
+      "thumbnail": "https://img.youtube.com/vi/OBqZDyVlFP8/maxresdefault.jpg"
+    },
+	 {
+      "id": "underTheSeaLaunch",
+      "label": "Under the Sea",
+      "type": "youtube",
+      "videoId": "GC_mV1IpjWA",
+      "thumbnail": "https://img.youtube.com/vi/GC_mV1IpjWA/maxresdefault.jpg"
+    },
+	 {
+      "id": "inSummerLaunch",
+      "label": "In Summer",
+      "type": "youtube",
+      "videoId": "rnEB2F_v_cE",
+      "thumbnail": "https://img.youtube.com/vi/rnEB2F_v_cE/maxresdefault.jpg"
+    },
+    {
+      "id": "doraThemeLaunch",
+      "label": "Dora Theme",
+      "type": "youtube",
+      "videoId": "xlkH17apLMY",
+      "thumbnail": "https://img.youtube.com/vi/xlkH17apLMY/maxresdefault.jpg"
+    },
+    {
+      "id": "snowmanLaunch",
+      "label": "Build a Snowman",
+      "type": "youtube",
+      "videoId": "TeQ_TTyLGMs",
+      "thumbnail": "https://img.youtube.com/vi/TeQ_TTyLGMs/maxresdefault.jpg"
+    },
+    {
+      "id": "isasSongLaunch",
+      "label": "Isa's Song",
+      "type": "youtube",
+      "videoId": "bBeZSuHI4Qc",
+      "thumbnail": "https://img.youtube.com/vi/bBeZSuHI4Qc/maxresdefault.jpg"
+    },
+    {
+      "id": "hakunaMatataSong",
+      "label": "Hakuna Matata",
+      "type": "youtube",
+      "videoId": "kaOIxll4LCA",
+      "thumbnail": "https://img.youtube.com/vi/kaOIxll4LCA/maxresdefault.jpg"
+    }
+  ]
+}

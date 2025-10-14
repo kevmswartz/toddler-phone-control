@@ -1,0 +1,30 @@
+{
+  "name": "roku-control",
+  "version": "1.0.0",
+  "description": "Web-based Roku remote control with app launching",
+  "keywords": [
+    "roku",
+    "remote",
+    "control"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor-community/electron": "^5.0.0",
+    "@capacitor-community/http": "^1.4.1",
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/core": "^5.7.8"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "sync": "npm run build && npx cap sync",
+    "android": "npm run sync && npx cap open android",
+    "windows": "npm run sync && npx cap open windows",
+    "content": "node scripts/toddler-content-cli.js"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.7.8",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.4.5"
+  }
+}
