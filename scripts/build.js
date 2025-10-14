@@ -58,14 +58,20 @@ function cleanDist() {
 function buildTailwind() {
   const input = path.join(projectRoot, 'styles', 'tailwind.css');
   const output = path.join(distDir, 'tailwind.css');
-  const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
   if (!fs.existsSync(input)) {
     console.warn('Skipping Tailwind build: input file not found.');
     return;
   }
 
-  const result = spawnSync(npx, ['tailwindcss', '-i', input, '-o', output, '--minify'], {
+  let tailwindCli;
+  try {
+    tailwindCli = require.resolve('tailwindcss/lib/cli.js');
+  } catch (error) {
+    throw new Error('Tailwind CSS CLI not found. Run "npm install" before building.');
+  }
+
+  const result = spawnSync(process.execPath, [tailwindCli, '-i', input, '-o', output, '--minify'], {
     cwd: projectRoot,
     stdio: 'inherit'
   });
