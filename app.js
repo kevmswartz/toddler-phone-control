@@ -767,12 +767,12 @@ function startFireworksShow(durationSeconds = 6, message = 'Fireworks!') {
     overlay.classList.add('flex');
 
     const launchBurst = () => {
-        createFireworkBurst(stage);
+        createFireworkBurst(stage, { particleCount: 36 + Math.floor(Math.random() * 12) });
     };
 
     stage.innerHTML = '';
     launchBurst();
-    fireworksInterval = setInterval(launchBurst, 700);
+    fireworksInterval = setInterval(launchBurst, 550);
     fireworksTimeout = setTimeout(() => {
         stopFireworksShow({ silent: true });
     }, durationMs);
@@ -809,10 +809,10 @@ function stopFireworksShow({ silent = false } = {}) {
     }
 }
 
-function createFireworkBurst(stage) {
+function createFireworkBurst(stage, options = {}) {
     if (!stage) return;
-    const colors = ['#fde68a', '#fca5a5', '#a5b4fc', '#7dd3fc', '#f9a8d4', '#bbf7d0'];
-    const particleCount = 24;
+    const colors = ['#fde68a', '#fca5a5', '#a5b4fc', '#7dd3fc', '#f9a8d4', '#bbf7d0', '#fef3c7', '#bfdbfe'];
+    const particleCount = options.particleCount ?? 32;
     const rect = stage.getBoundingClientRect();
     const stageWidth = rect.width || stage.clientWidth || 1;
     const stageHeight = rect.height || stage.clientHeight || 1;
@@ -821,7 +821,7 @@ function createFireworkBurst(stage) {
 
     for (let i = 0; i < particleCount; i++) {
         const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
-        const distance = 120 + Math.random() * 200;
+        const distance = 140 + Math.random() * 260;
         const targetX = originX + Math.cos(angle) * distance;
         const targetY = originY + Math.sin(angle) * distance;
 
@@ -829,9 +829,10 @@ function createFireworkBurst(stage) {
         particle.className = 'firework-particle';
         particle.style.setProperty('--x', `${(targetX / stageWidth) * 100}%`);
         particle.style.setProperty('--y', `${(targetY / stageHeight) * 100}%`);
-        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-        particle.style.animationDuration = `${650 + Math.random() * 650}ms`;
-        particle.style.boxShadow = `0 0 20px 4px ${particle.style.background}`;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.background = color;
+        particle.style.animationDuration = `${520 + Math.random() * 720}ms`;
+        particle.style.boxShadow = `0 0 24px 6px ${color}`;
 
         stage.appendChild(particle);
 
