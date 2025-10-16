@@ -1,8 +1,20 @@
 {
   "specialButtons": [
     {
+      "id": "kraveTtsButton",
+      "emoji": "🗣️",
+      "label": "Krave",
+      "handler": "speakTts",
+      "args": [
+        "I want Krave"
+      ],
+      "thumbnail": "/public/0003800024848.webp",
+      "category": "kidMode-tts",
+      "zone": "quick"
+    },
+    {
       "id": "findRokuButton",
-      "emoji": "\ud83d\udd0d",
+      "emoji": "🔍",
       "label": "Find Roku",
       "handler": "checkStatus",
       "category": "kidMode-remote",
@@ -10,7 +22,7 @@
     },
     {
       "id": "disneyPlusButton",
-      "emoji": "\ud83e\uddda",
+      "emoji": "🧚",
       "label": "Disney+",
       "thumbnail": "/public/06d8Po5VgMWjpiRU0RpZoul-18.webp",
       "appId": "291097",
@@ -20,7 +32,7 @@
     },
     {
       "id": "paramountPlusButton",
-      "emoji": "\ud83c\udf1f",
+      "emoji": "🌟",
       "label": "Paramount+",
       "appId": "31440",
       "thumbnail": "/public/f7c0cf5003624d98fbe69b2156453e9c.webp",
@@ -30,7 +42,7 @@
     },
     {
       "id": "favoriteMacroButton",
-      "emoji": "\u2728",
+      "emoji": "✨",
       "label": "Magic Button",
       "handler": "runFavoriteMacro",
       "category": "kidMode-content",
@@ -39,7 +51,7 @@
     },
     {
       "id": "homeButton",
-      "emoji": "\ud83c\udfe0",
+      "emoji": "🏠",
       "label": "Go Home",
       "handler": "sendKey",
       "args": [
@@ -50,7 +62,7 @@
     },
     {
       "id": "instantReplayButton",
-      "emoji": "\ud83d\udd01",
+      "emoji": "🔁",
       "label": "Do It Again",
       "handler": "sendKey",
       "args": [
@@ -61,7 +73,7 @@
     },
     {
       "id": "playPauseButton",
-      "emoji": "\u23ef\ufe0f",
+      "emoji": "⏯️",
       "label": "Play / Pause",
       "handler": "sendKey",
       "args": [
@@ -72,7 +84,7 @@
     },
     {
       "id": "upButton",
-      "emoji": "\u2b06\ufe0f",
+      "emoji": "⬆️",
       "label": "Up",
       "handler": "sendKey",
       "args": [
@@ -83,7 +95,7 @@
     },
     {
       "id": "leftButton",
-      "emoji": "\u2b05\ufe0f",
+      "emoji": "⬅️",
       "label": "Left",
       "handler": "sendKey",
       "args": [
@@ -94,7 +106,7 @@
     },
     {
       "id": "selectButton",
-      "emoji": "\ud83c\udd97",
+      "emoji": "🆗",
       "label": "Select",
       "handler": "sendKey",
       "args": [
@@ -105,7 +117,7 @@
     },
     {
       "id": "rightButton",
-      "emoji": "\u27a1\ufe0f",
+      "emoji": "➡️",
       "label": "Right",
       "handler": "sendKey",
       "args": [
@@ -116,7 +128,7 @@
     },
     {
       "id": "downButton",
-      "emoji": "\u2b07\ufe0f",
+      "emoji": "⬇️",
       "label": "Down",
       "handler": "sendKey",
       "args": [
@@ -127,7 +139,7 @@
     },
     {
       "id": "powerButton",
-      "emoji": "\u23fb",
+      "emoji": "⏻",
       "label": "Power",
       "handler": "sendKey",
       "args": [
@@ -135,6 +147,18 @@
       ],
       "category": "kidMode-remote",
       "zone": "remote"
+    },
+    {
+      "id": "fly",
+      "emoji": "🗣️",
+      "label": "Fly",
+      "handler": "speakTts",
+      "category": "kidMode-tts",
+      "zone": "quick",
+      "thumbnail": "/public/Gemini_Generated_Image_jf53kxjf53kxjf53.png",
+      "args": [
+        "Flying!!!!"
+      ]
     }
   ],
   "quickLaunch": [
@@ -145,14 +169,14 @@
       "videoId": "OBqZDyVlFP8",
       "thumbnail": "https://img.youtube.com/vi/OBqZDyVlFP8/maxresdefault.jpg"
     },
-	 {
+    {
       "id": "underTheSeaLaunch",
       "label": "Under the Sea",
       "type": "youtube",
       "videoId": "GC_mV1IpjWA",
       "thumbnail": "https://img.youtube.com/vi/GC_mV1IpjWA/maxresdefault.jpg"
     },
-	 {
+    {
       "id": "inSummerLaunch",
       "label": "In Summer",
       "type": "youtube",
@@ -186,6 +210,19 @@
       "type": "youtube",
       "videoId": "kaOIxll4LCA",
       "thumbnail": "https://img.youtube.com/vi/kaOIxll4LCA/maxresdefault.jpg"
+    },
+    {
+      "id": "baby-shark",
+      "label": "Baby Shark",
+      "type": "youtube",
+      "videoId": "XqZsoesa55w"
+    },
+    {
+      "id": "lesson-1",
+      "label": "Lesson #1",
+      "type": "youtube",
+      "thumbnail": "https://i.ytimg.com/vi/A3lvmq-iG4c/hqdefault.jpg",
+      "videoId": "A3lvmq-iG4c"
     }
   ]
 }

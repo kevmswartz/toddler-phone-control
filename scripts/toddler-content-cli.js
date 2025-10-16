@@ -81,10 +81,18 @@ function listContent(filePath, data) {
   data.specialButtons.forEach((item) => {
     console.log(`  • ${item.id}  [${item.zone || 'quick'}] ${item.label}`);
   });
-  console.log(`\nQuick Launch (${data.quickLaunch.length})`);
+  const quickLaunchCount = data.quickLaunch.length;
+  const quickSpecial = data.specialButtons.filter((item) => (item.zone || 'quick') === 'quick');
+  console.log(`\nQuick Launch (${quickLaunchCount})`);
   data.quickLaunch.forEach((item) => {
     console.log(`  • ${item.id}  (${item.type || 'unknown'}) ${item.label}`);
   });
+  if (quickSpecial.length) {
+    console.log(`\nQuick Specials (${quickSpecial.length})`);
+    quickSpecial.forEach((item) => {
+      console.log(`  • ${item.id}  [special] ${item.label}`);
+    });
+  }
 }
 
 function ensureIdAvailable(data, id) {
