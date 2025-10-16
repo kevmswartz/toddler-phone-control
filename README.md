@@ -82,8 +82,9 @@ The Roku External Control Protocol does not send CORS headers, so browser-based 
 - Commit the JSON to your git repo (for example on GitHub) and copy the raw file URL. Many teams keep a `content` branch just for the JSON so anyone can PR new buttons without touching the app code.
 - In the app’s Settings (after unlocking), paste the raw URL into **Kid Button Source** and click **Save URL & Refresh**. The Electron/Android apps will cache the remote JSON for offline use; you can refresh or clear the cache anytime.
 - Prefer a script? Run `./scripts/update-toddler-content.ps1 -Url "https://raw.githubusercontent.com/<org>/<repo>/<branch>/toddler-content.json"` to download the latest remote JSON into the repo (a timestamped backup is created automatically).
-- Want a guided workflow? `./scripts/manage-toddler-content.ps1 -Action menu` adds Roku app launchers, YouTube quick launches, or TTS buttons through simple prompts (use `-Action add-quick-app`, `add-quick`, `add-tts`, `add-timer`, etc. for direct commands).
+- Want a guided workflow? `./scripts/manage-toddler-content.ps1 -Action menu` adds Roku app launchers, YouTube quick launches, TTS buttons, countdown timers, or fireworks celebrations through simple prompts (use `-Action add-quick-app`, `add-quick`, `add-tts`, `add-timer`, `add-fireworks`, etc. for direct commands).
 - To create a countdown button, run `./scripts/manage-toddler-content.ps1 -Action add-timer` and follow the prompts; the new button will use the `startToddlerTimer` handler and works out of the box with the built-in overlay.
+- To celebrate wins, use `./scripts/manage-toddler-content.ps1 -Action add-fireworks` to wire up a button that calls `startFireworksShow` with custom duration and narration.
 
 ### Unlocking Advanced Settings
 

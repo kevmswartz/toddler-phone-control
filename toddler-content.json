@@ -159,6 +159,18 @@
         "30",
         "30s"
       ]
+    },
+    {
+      "id": "celebrate",
+      "emoji": "🎆",
+      "label": "Celebrate",
+      "handler": "startFireworksShow",
+      "category": "kidMode-celebration",
+      "zone": "quick",
+      "args": [
+        "10",
+        "Celebrate!"
+      ]
     }
   ],
   "quickLaunch": [

@@ -11,7 +11,7 @@
 #>
 
 param(
-    [ValidateSet('menu', 'list', 'add-special', 'add-quick', 'add-quick-app', 'add-tts', 'add-timer', 'remove', 'init')]
+    [ValidateSet('menu', 'list', 'add-special', 'add-quick', 'add-quick-app', 'add-tts', 'add-timer', 'add-fireworks', 'remove', 'init')]
     [string] $Action = 'menu',
 
     [string] $File
@@ -428,6 +428,55 @@ function Run-AddTimer {
     Invoke-ContentCli -Arguments $arguments
 }
 
+function Run-AddFireworks {
+    Write-Host "Add a fireworks celebration button" -ForegroundColor Cyan
+    Show-TargetHint
+
+    $label = Prompt-Required -Message "Label (e.g. Celebrate)"
+    $durationPrompt = Prompt-Required -Message "Duration in seconds (e.g. 6)"
+    try {
+        $durationSeconds = [int]::Parse($durationPrompt)
+    } catch {
+        throw "Please enter a numeric duration in seconds."
+    }
+    if ($durationSeconds -le 0) {
+        throw "Duration must be greater than zero."
+    }
+
+    $messageDefault = $label
+    $messageInput = Prompt-Optional -Message "Celebration message [$messageDefault]"
+    $message = if ([string]::IsNullOrWhiteSpace($messageInput)) { $messageDefault } else { $messageInput }
+
+    $emojiDefault = '🎆'
+    $emojiInput = Prompt-Optional -Message "Emoji [$emojiDefault]"
+    $emoji = if ([string]::IsNullOrWhiteSpace($emojiInput)) { $emojiDefault } else { $emojiInput }
+
+    $slugBase = ($label.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
+    if ([string]::IsNullOrWhiteSpace($slugBase)) {
+        $slugBase = 'fireworks'
+    }
+    $defaultId = Generate-UniqueId $slugBase
+    $idPrompt = "Button ID [$defaultId]"
+    $id = Prompt-UniqueId -PromptMessage $idPrompt -DefaultId $defaultId
+
+    $thumbInput = Prompt-Optional -Message "Thumbnail relative to /public (optional)"
+    $thumbnail = $null
+    if ($thumbInput) {
+        if ($thumbInput.StartsWith('/')) {
+            $thumbnail = $thumbInput
+        } elseif ($thumbInput.StartsWith('http', [System.StringComparison]::OrdinalIgnoreCase)) {
+            $thumbnail = $thumbInput
+        } else {
+            $thumbnail = "/public/$thumbInput"
+        }
+    }
+
+    $arguments = @('add-special', '--id', $id, '--label', $label, '--emoji', $emoji, '--handler', 'startFireworksShow', '--zone', 'quick', '--category', 'kidMode-celebration', '--args', $durationSeconds.ToString(), $message)
+    if ($thumbnail) { $arguments += @('--thumbnail', $thumbnail) }
+    $arguments += (Ensure-FileArgument)
+    Invoke-ContentCli -Arguments $arguments
+}
+
 function Run-Remove {
     Write-Host "Remove an entry" -ForegroundColor Cyan
     Show-TargetHint
@@ -454,7 +503,8 @@ function Show-Menu {
         Write-Host " 2) Add YouTube quick launch"
         Write-Host " 3) Add TTS speak button"
         Write-Host " 4) Add countdown timer"
-        Write-Host " 5) Exit"
+        Write-Host " 5) Add fireworks celebration"
+        Write-Host " 6) Exit"
         $choice = Read-Host -Prompt "Choose an option"
 
         switch ($choice) {
@@ -462,7 +512,8 @@ function Show-Menu {
             '2' { Run-AddQuick }
             '3' { Run-AddTts }
             '4' { Run-AddTimer }
-            '5' { return }
+            '5' { Run-AddFireworks }
+            '6' { return }
             default { Write-Host "Unknown choice. Try again." -ForegroundColor Yellow }
         }
     }
@@ -477,6 +528,7 @@ try {
         'add-quick-app' { Run-AddQuickApp }
         'add-tts' { Run-AddTts }
         'add-timer' { Run-AddTimer }
+        'add-fireworks' { Run-AddFireworks }
         'remove' { Run-Remove }
         'init' { Run-Init }
         default { throw "Unhandled action '$Action'." }

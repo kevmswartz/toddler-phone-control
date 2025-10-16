@@ -43,6 +43,8 @@ let timerAnimationFrame = null;
 let timerEndTimestamp = 0;
 let timerDurationMs = 0;
 let timerLabelText = '';
+let fireworksInterval = null;
+let fireworksTimeout = null;
 
 function getToddlerContentUrl() {
     return localStorage.getItem(TODDLER_CONTENT_URL_KEY) || '';
@@ -716,6 +718,96 @@ function cancelToddlerTimer({ silent = false } = {}) {
     timerLabelText = '';
     if (!silent) {
         showStatus('Timer cancelled.', 'info');
+    }
+}
+
+function startFireworksShow(durationSeconds = 6, message = 'Fireworks!') {
+    const overlay = document.getElementById('fireworksOverlay');
+    const labelEl = document.getElementById('fireworksLabel');
+    const stage = document.getElementById('fireworksStage');
+
+    if (!overlay || !labelEl || !stage) {
+        console.warn('Fireworks overlay elements are missing.');
+        return;
+    }
+
+    stopFireworksShow({ silent: true });
+
+    const safeSeconds = Number(durationSeconds);
+    const durationMs = Number.isFinite(safeSeconds) && safeSeconds > 0 ? safeSeconds * 1000 : 6000;
+    const messageText = String(message || 'Fireworks!').trim() || 'Fireworks!';
+
+    labelEl.textContent = messageText;
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+
+    const launchBurst = () => {
+        createFireworkBurst(stage);
+    };
+
+    launchBurst();
+    fireworksInterval = setInterval(launchBurst, 700);
+    fireworksTimeout = setTimeout(() => {
+        stopFireworksShow({ silent: true });
+    }, durationMs);
+
+    speakTts(messageText);
+    showStatus('Fireworks launched!', 'success');
+}
+
+function stopFireworksShow({ silent = false } = {}) {
+    if (fireworksInterval) {
+        clearInterval(fireworksInterval);
+        fireworksInterval = null;
+    }
+    if (fireworksTimeout) {
+        clearTimeout(fireworksTimeout);
+        fireworksTimeout = null;
+    }
+
+    const overlay = document.getElementById('fireworksOverlay');
+    const stage = document.getElementById('fireworksStage');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+    }
+    if (stage) {
+        stage.innerHTML = '';
+    }
+
+    if (!silent) {
+        showStatus('Fireworks finished.', 'info');
+    }
+}
+
+function createFireworkBurst(stage) {
+    if (!stage) return;
+    const colors = ['#fde68a', '#fca5a5', '#a5b4fc', '#7dd3fc', '#f9a8d4', '#bbf7d0'];
+    const particleCount = 18;
+    const rect = stage.getBoundingClientRect();
+    const stageWidth = rect.width || stage.clientWidth || 1;
+    const stageHeight = rect.height || stage.clientHeight || 1;
+    const originX = stageWidth / 2;
+    const originY = stageHeight / 2;
+
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
+        const distance = 80 + Math.random() * 80;
+        const targetX = originX + Math.cos(angle) * distance;
+        const targetY = originY + Math.sin(angle) * distance;
+
+        const particle = document.createElement('div');
+        particle.className = 'firework-particle';
+        particle.style.setProperty('--x', `${(targetX / stageWidth) * 100}%`);
+        particle.style.setProperty('--y', `${(targetY / stageHeight) * 100}%`);
+        particle.style.background = colors[i % colors.length];
+        particle.style.animationDuration = `${700 + Math.random() * 500}ms`;
+
+        stage.appendChild(particle);
+
+        setTimeout(() => {
+            particle.remove();
+        }, 1100);
     }
 }
 

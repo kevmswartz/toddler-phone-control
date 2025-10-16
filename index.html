@@ -26,6 +26,42 @@
             transform-origin: 50% 50%;
             transition: stroke-dashoffset 0.2s linear;
         }
+        .fireworks-overlay {
+            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.85);
+        }
+        .fireworks-stage {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            overflow: hidden;
+            border-radius: 1.5rem;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), rgba(15,23,42,0.6));
+        }
+        .firework-particle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 9999px;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+            animation: fireworkTravel 1000ms ease-out forwards;
+        }
+        @keyframes fireworkTravel {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%)) scale(0.1);
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 text-white">
@@ -377,6 +413,32 @@
                 onclick="cancelToddlerTimer()"
                 class="mt-8 w-full rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/60">
                 Tap to stop timer
+            </button>
+        </div>
+    </div>
+
+    <div
+        id="fireworksOverlay"
+        class="fireworks-overlay fixed inset-0 z-40 hidden items-center justify-center px-6 py-12 text-white">
+        <div class="w-full max-w-2xl space-y-6 rounded-3xl bg-white/10 p-8 shadow-2xl">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">🎆 Fireworks!</h2>
+                    <p id="fireworksLabel" class="mt-1 text-sm text-indigo-100">Celebration time.</p>
+                </div>
+                <button
+                    onclick="stopFireworksShow()"
+                    class="rounded-full bg-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                    Close
+                </button>
+            </div>
+
+            <div id="fireworksStage" class="fireworks-stage"></div>
+
+            <button
+                onclick="stopFireworksShow()"
+                class="w-full rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/60">
+                Done celebrating
             </button>
         </div>
     </div>
