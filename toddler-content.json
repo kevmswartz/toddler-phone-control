@@ -231,32 +231,6 @@
       "thumbnail": "https://img.youtube.com/vi/XqZsoesa55w/maxresdefault.jpg"
     },
     {
-      "id": "lightsOn",
-      "label": "Lights On",
-      "emoji": "💡",
-      "handler": "goveePower",
-      "args": [
-        true,
-        "192.168.40.8",
-        4003
-      ],
-      "zone": "quick",
-      "category": "kidMode-lights"
-    },
-    {
-      "id": "lightsOff",
-      "label": "Lights Off",
-      "emoji": "🌙",
-      "handler": "goveePower",
-      "args": [
-        false,
-        "192.168.40.8",
-        4003
-      ],
-      "zone": "quick",
-      "category": "kidMode-lights"
-    },
-    {
       "id": "lightsToggle",
       "label": "Toggle Lights",
       "emoji": "🔁",
