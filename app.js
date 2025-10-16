@@ -1856,8 +1856,26 @@ function sleep(ms) {
 }
 
 // Settings Lock Functions
+function handleSettingsClick(event) {
+    const pinModal = document.getElementById('pinModal');
+    const modalOpen = pinModal && !pinModal.classList.contains('hidden');
+    if (settingsUnlocked && !modalOpen) {
+        event.preventDefault();
+        hideSettings();
+        return;
+    }
+    if (!settingsUnlocked && !modalOpen) {
+        event.preventDefault();
+        showStatus('Hold the gear button for two seconds to unlock advanced controls.', 'info');
+    }
+}
+
 function startSettingsHold() {
     if (isHolding) return;
+    if (settingsUnlocked) {
+        hideSettings();
+        return;
+    }
     isHolding = true;
 
     const circle = document.getElementById('progressCircle');
@@ -1963,6 +1981,30 @@ function showSettings() {
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
     updateToddlerContentCacheMeta();
     showStatus('Settings unlocked! Advanced controls are now visible.', 'success');
+
+    const contentSourceSection = document.getElementById('contentSourceSection');
+    if (contentSourceSection) {
+        setTimeout(() => {
+            contentSourceSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            contentSourceSection.classList.add('showcase-highlight');
+            setTimeout(() => {
+                contentSourceSection.classList.remove('showcase-highlight');
+            }, 1600);
+        }, 50);
+    }
+}
+
+function hideSettings() {
+    const advancedSections = document.querySelectorAll('[data-settings]');
+    advancedSections.forEach(section => {
+        section.classList.add('hidden');
+    });
+    const contentSourceSection = document.getElementById('contentSourceSection');
+    if (contentSourceSection) {
+        contentSourceSection.classList.remove('showcase-highlight');
+    }
+    settingsUnlocked = false;
+    showStatus('Advanced controls hidden. Hold the gear button to unlock again.', 'info');
 }
 
 // Toggle dark/light theme

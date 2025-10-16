@@ -48,6 +48,14 @@ npm install            # only needed the first time
 npm run electron:start # build once and launch the desktop shell
 ```
 
+Or use the PowerShell helper to run build → sync → Electron start in one go:
+
+```powershell
+./scripts/run-electron.ps1
+```
+
+The helper rebuilds, runs `npx cap sync`, copies fresh web assets into `electron/app/`, and finally launches the Electron shell so you always see the latest UI.
+
 You can generate a packaged build (folder output) with:
 
 ```bash
@@ -73,6 +81,12 @@ The Roku External Control Protocol does not send CORS headers, so browser-based 
   Use `npm run content -- --help` to see all commands (init, add-special, add-quick, remove, list).
 - Commit the JSON to your git repo (for example on GitHub) and copy the raw file URL. Many teams keep a `content` branch just for the JSON so anyone can PR new buttons without touching the app code.
 - In the app’s Settings (after unlocking), paste the raw URL into **Kid Button Source** and click **Save URL & Refresh**. The Electron/Android apps will cache the remote JSON for offline use; you can refresh or clear the cache anytime.
+
+### Unlocking Advanced Settings
+
+- Long-press the gear button in the top-left corner for about two seconds to open the PIN pad (default `1234`).
+- After entering the PIN, the advanced sections (connection settings, kid button source, macros, etc.) become visible.
+- When you are finished, use the **Hide Advanced Controls** button at the top of the advanced area to tuck everything away again for kid mode.
 
 ### Collaboration Tips
 

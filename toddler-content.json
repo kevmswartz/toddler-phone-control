@@ -1,18 +1,6 @@
 {
   "specialButtons": [
     {
-      "id": "kraveTtsButton",
-      "emoji": "\ud83d\udde3\ufe0f",
-      "label": "Krave",
-      "handler": "speakTts",
-      "args": [
-        "I want Krave"
-      ],
-      "thumbnail": "/public/0003800024848.webp",
-      "category": "kidMode-tts",
-      "zone": "quick"
-    },
-    {
       "id": "findRokuButton",
       "emoji": "\ud83d\udd0d",
       "label": "Find Roku",
