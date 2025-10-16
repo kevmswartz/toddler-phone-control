@@ -11,7 +11,7 @@
 #>
 
 param(
-    [ValidateSet('menu', 'list', 'add-special', 'add-quick', 'add-quick-app', 'add-tts', 'remove', 'init')]
+    [ValidateSet('menu', 'list', 'add-special', 'add-quick', 'add-quick-app', 'add-tts', 'add-timer', 'remove', 'init')]
     [string] $Action = 'menu',
 
     [string] $File
@@ -382,6 +382,52 @@ function Run-AddTts {
     Invoke-ContentCli -Arguments $arguments
 }
 
+function Run-AddTimer {
+    Write-Host "Add a countdown timer button" -ForegroundColor Cyan
+    Show-TargetHint
+
+    $label = Prompt-Required -Message "Label (e.g. Brush Teeth Timer)"
+    $durationPrompt = Prompt-Required -Message "Duration in minutes (e.g. 5)"
+    try {
+        $durationMinutes = [double]::Parse($durationPrompt)
+    } catch {
+        throw "Please enter a numeric duration."
+    }
+    if ($durationMinutes -le 0) {
+        throw "Duration must be greater than zero."
+    }
+    $durationSeconds = [int][Math]::Round($durationMinutes * 60)
+
+    $emojiDefault = '⏳'
+    $emojiInput = Prompt-Optional -Message "Emoji [$emojiDefault]"
+    $emoji = if ([string]::IsNullOrWhiteSpace($emojiInput)) { $emojiDefault } else { $emojiInput }
+
+    $slugBase = ($label.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
+    if ([string]::IsNullOrWhiteSpace($slugBase)) {
+        $slugBase = 'timer'
+    }
+    $defaultId = Generate-UniqueId $slugBase
+    $idPrompt = "Button ID [$defaultId]"
+    $id = Prompt-UniqueId -PromptMessage $idPrompt -DefaultId $defaultId
+
+    $thumbInput = Prompt-Optional -Message "Thumbnail relative to /public (optional)"
+    $thumbnail = $null
+    if ($thumbInput) {
+        if ($thumbInput.StartsWith('/')) {
+            $thumbnail = $thumbInput
+        } elseif ($thumbInput.StartsWith('http', [System.StringComparison]::OrdinalIgnoreCase)) {
+            $thumbnail = $thumbInput
+        } else {
+            $thumbnail = "/public/$thumbInput"
+        }
+    }
+
+    $arguments = @('add-special', '--id', $id, '--label', $label, '--emoji', $emoji, '--handler', 'startToddlerTimer', '--zone', 'quick', '--category', 'kidMode-timer', '--args', $durationSeconds.ToString(), $label)
+    if ($thumbnail) { $arguments += @('--thumbnail', $thumbnail) }
+    $arguments += (Ensure-FileArgument)
+    Invoke-ContentCli -Arguments $arguments
+}
+
 function Run-Remove {
     Write-Host "Remove an entry" -ForegroundColor Cyan
     Show-TargetHint
@@ -404,25 +450,19 @@ function Show-Menu {
     while ($true) {
         Write-Host ""
         Write-Host "Toddler Content Manager" -ForegroundColor Cyan
-        Write-Host " 1) List buttons"
-        Write-Host " 2) Add special button"
-        Write-Host " 3) Add YouTube quick launch"
-        Write-Host " 4) Add Roku app launcher"
-        Write-Host " 5) Add TTS speak button"
-        Write-Host " 6) Remove entry"
-        Write-Host " 7) Reinitialize file"
-        Write-Host " 8) Exit"
+        Write-Host " 1) Add Roku app launcher"
+        Write-Host " 2) Add YouTube quick launch"
+        Write-Host " 3) Add TTS speak button"
+        Write-Host " 4) Add countdown timer"
+        Write-Host " 5) Exit"
         $choice = Read-Host -Prompt "Choose an option"
 
         switch ($choice) {
-            '1' { Run-List }
-            '2' { Run-AddSpecial }
-            '3' { Run-AddQuick }
-            '4' { Run-AddQuickApp }
-            '5' { Run-AddTts }
-            '6' { Run-Remove }
-            '7' { Run-Init }
-            '8' { return }
+            '1' { Run-AddQuickApp }
+            '2' { Run-AddQuick }
+            '3' { Run-AddTts }
+            '4' { Run-AddTimer }
+            '5' { return }
             default { Write-Host "Unknown choice. Try again." -ForegroundColor Yellow }
         }
     }
@@ -436,6 +476,7 @@ try {
         'add-quick' { Run-AddQuick }
         'add-quick-app' { Run-AddQuickApp }
         'add-tts' { Run-AddTts }
+        'add-timer' { Run-AddTimer }
         'remove' { Run-Remove }
         'init' { Run-Init }
         default { throw "Unhandled action '$Action'." }

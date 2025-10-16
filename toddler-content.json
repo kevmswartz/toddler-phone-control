@@ -1,18 +1,6 @@
 {
   "specialButtons": [
     {
-      "id": "kraveTtsButton",
-      "emoji": "🗣️",
-      "label": "Krave",
-      "handler": "speakTts",
-      "args": [
-        "I want Krave"
-      ],
-      "thumbnail": "/public/0003800024848.webp",
-      "category": "kidMode-tts",
-      "zone": "quick"
-    },
-    {
       "id": "findRokuButton",
       "emoji": "🔍",
       "label": "Find Roku",
@@ -159,6 +147,18 @@
       "args": [
         "Flying!!!!"
       ]
+    },
+    {
+      "id": "30s",
+      "emoji": "⏳",
+      "label": "30s",
+      "handler": "startToddlerTimer",
+      "category": "kidMode-timer",
+      "zone": "quick",
+      "args": [
+        "30",
+        "30s"
+      ]
     }
   ],
   "quickLaunch": [
@@ -215,7 +215,8 @@
       "id": "baby-shark",
       "label": "Baby Shark",
       "type": "youtube",
-      "videoId": "XqZsoesa55w"
+      "videoId": "XqZsoesa55w",
+      "thumbnail": "https://img.youtube.com/vi/XqZsoesa55w/maxresdefault.jpg"
     },
     {
       "id": "lesson-1",

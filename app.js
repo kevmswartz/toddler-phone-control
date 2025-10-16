@@ -21,6 +21,7 @@ const TODDLER_CONTENT_URL_KEY = 'toddler_content_url';
 const TODDLER_CONTENT_CACHE_KEY = 'toddler_content_cache';
 const TODDLER_CONTENT_CACHE_TIME_KEY = 'toddler_content_cache_time';
 const TODDLER_CONTENT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
+const TIMER_CIRCUMFERENCE = 2 * Math.PI * 54;
 
 // Store latest media data for detailed view
 let latestMediaData = null;
@@ -38,6 +39,10 @@ let isHolding = false;
 let settingsUnlocked = false;
 let currentPin = '';
 let toastTimer = null;
+let timerAnimationFrame = null;
+let timerEndTimestamp = 0;
+let timerDurationMs = 0;
+let timerLabelText = '';
 
 function getToddlerContentUrl() {
     return localStorage.getItem(TODDLER_CONTENT_URL_KEY) || '';
@@ -611,6 +616,106 @@ function speakTts(message = '') {
     } catch (error) {
         console.error('Speech synthesis exception', error);
         showStatus('Could not start speaking. Try again.', 'error');
+    }
+}
+
+function startToddlerTimer(durationSeconds = 300, label = 'Timer') {
+    const secondsValue = Number(Array.isArray(durationSeconds) ? durationSeconds[0] : durationSeconds);
+    const labelValue = Array.isArray(durationSeconds) && durationSeconds.length > 1 ? durationSeconds[1] : label;
+    const displayLabel = typeof labelValue === 'string' && labelValue.trim().length > 0 ? labelValue.trim() : 'Timer';
+
+    const overlay = document.getElementById('timerOverlay');
+    const labelEl = document.getElementById('timerLabel');
+    if (!overlay || !labelEl) {
+        console.warn('Timer overlay elements are missing.');
+        return;
+    }
+
+    const sanitizedSeconds = Number.isFinite(secondsValue) && secondsValue > 0 ? secondsValue : 300;
+
+    cancelToddlerTimer({ silent: true });
+
+    timerDurationMs = sanitizedSeconds * 1000;
+    timerEndTimestamp = Date.now() + timerDurationMs;
+    timerLabelText = displayLabel || 'Timer';
+
+    labelEl.textContent = `${timerLabelText} — ${formatTimerDuration(sanitizedSeconds)} timer`;
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+
+    updateToddlerTimerDisplay();
+    showStatus(`Started ${timerLabelText} for ${formatTimerDuration(sanitizedSeconds)}.`, 'success');
+}
+
+function formatTimerDuration(totalSeconds = 0) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.max(0, Math.round(totalSeconds % 60));
+    const minutePart = minutes > 0 ? `${minutes} min` : '';
+    const secondPart = seconds > 0 ? `${seconds} sec` : '';
+    return `${minutePart} ${secondPart}`.trim() || '0 sec';
+}
+
+function updateToddlerTimerDisplay() {
+    const overlay = document.getElementById('timerOverlay');
+    const countdownEl = document.getElementById('timerCountdown');
+    const progressCircle = document.getElementById('timerProgressCircle');
+    if (!overlay || overlay.classList.contains('hidden')) {
+        return;
+    }
+
+    const now = Date.now();
+    const remainingMs = Math.max(0, timerEndTimestamp - now);
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
+    const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+    const seconds = String(remainingSeconds % 60).padStart(2, '0');
+
+    if (countdownEl) {
+        countdownEl.textContent = `${minutes}:${seconds}`;
+    }
+
+    if (progressCircle && timerDurationMs > 0) {
+        const progress = Math.min(1, 1 - remainingMs / timerDurationMs);
+        const offset = TIMER_CIRCUMFERENCE * (1 - progress);
+        progressCircle.style.strokeDashoffset = offset.toString();
+    }
+
+    if (remainingMs <= 0) {
+        completeToddlerTimer();
+        return;
+    }
+
+    timerAnimationFrame = requestAnimationFrame(updateToddlerTimerDisplay);
+}
+
+function completeToddlerTimer() {
+    cancelToddlerTimer({ silent: true });
+    speakTts(`${timerLabelText || 'Timer'} is done!`);
+    showStatus('Timer finished!', 'success');
+}
+
+function cancelToddlerTimer({ silent = false } = {}) {
+    if (timerAnimationFrame) {
+        cancelAnimationFrame(timerAnimationFrame);
+        timerAnimationFrame = null;
+    }
+    const overlay = document.getElementById('timerOverlay');
+    const progressCircle = document.getElementById('timerProgressCircle');
+    const countdownEl = document.getElementById('timerCountdown');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+    }
+    if (progressCircle) {
+        progressCircle.style.strokeDashoffset = TIMER_CIRCUMFERENCE.toString();
+    }
+    if (countdownEl) {
+        countdownEl.textContent = '00:00';
+    }
+    timerEndTimestamp = 0;
+    timerDurationMs = 0;
+    timerLabelText = '';
+    if (!silent) {
+        showStatus('Timer cancelled.', 'info');
     }
 }
 
