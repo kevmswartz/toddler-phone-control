@@ -85,12 +85,21 @@ The Roku External Control Protocol does not send CORS headers, so browser-based 
 - Want a guided workflow? `./scripts/manage-toddler-content.ps1 -Action menu` adds Roku app launchers, YouTube quick launches, TTS buttons, countdown timers, or fireworks celebrations through simple prompts (use `-Action add-quick-app`, `add-quick`, `add-tts`, `add-timer`, `add-fireworks`, etc. for direct commands).
 - To create a countdown button, run `./scripts/manage-toddler-content.ps1 -Action add-timer` and follow the prompts; the new button will use the `startToddlerTimer` handler and works out of the box with the built-in overlay.
 - To celebrate wins, use `./scripts/manage-toddler-content.ps1 -Action add-fireworks` to wire up a button that calls `startFireworksShow` with custom duration and narration.
+- For Govee LAN buttons, you can pass overrides directly in the handler args, e.g. `{ "handler": "goveePower", "args": [true, "192.168.1.52", 4003] }` or `{ "handler": "goveeSetColor", "args": [255, 120, 60, { "ip": "192.168.1.60" }] }`. The app falls back to the saved IP/port when no override is provided.
+- Sample buttons for a strip at `192.168.40.8`:
+  ```json
+  { "id": "lightsOn", "label": "Lights On", "emoji": "💡", "handler": "goveePower", "args": [true, "192.168.40.8", 4003], "zone": "quick", "category": "kidMode-lights" }
+  { "id": "lightsOff", "label": "Lights Off", "emoji": "🌙", "handler": "goveePower", "args": [false, "192.168.40.8", 4003], "zone": "quick", "category": "kidMode-lights" }
+  { "id": "lightsToggle", "label": "Toggle Lights", "emoji": "🔁", "handler": "goveeTogglePower", "args": ["192.168.40.8", 4003], "zone": "quick", "category": "kidMode-lights" }
+  ```
+  The toggle tracks the last known state locally; if the strip is controlled elsewhere, tap the explicit On/Off buttons once to resync.
 
 ### Unlocking Advanced Settings
 
 - Long-press the gear button in the top-left corner for about two seconds to open the PIN pad (default `1234`).
 - After entering the PIN, the advanced sections (connection settings, kid button source, macros, etc.) become visible.
 - When you are finished, use the **Hide Advanced Controls** button at the top of the advanced area to tuck everything away again for kid mode.
+- The **Govee Lights** panel lets you enter the H60A1’s LAN IP (from the Govee Home app), set the port (default `4003`), and trigger power, brightness, or quick colors over the local network. Those helper functions (`goveePower`, `goveeSetColor`, `goveeSetWarmWhite`, etc.) accept optional IP/port overrides when used from kid-mode buttons so each button can target its own strip. LAN control is sent via UDP multicast, so Electron builds handle it natively; on mobile you’ll need a Capacitor UDP plugin providing a `window.goveeLan.send` bridge.
 
 ### Collaboration Tips
 

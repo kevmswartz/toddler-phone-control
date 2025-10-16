@@ -236,6 +236,44 @@
       "type": "youtube",
       "thumbnail": "https://i.ytimg.com/vi/A3lvmq-iG4c/hqdefault.jpg",
       "videoId": "A3lvmq-iG4c"
+    },
+    {
+      "id": "lightsOn",
+      "label": "Lights On",
+      "emoji": "💡",
+      "handler": "goveePower",
+      "args": [
+        true,
+        "192.168.40.8",
+        4003
+      ],
+      "zone": "quick",
+      "category": "kidMode-lights"
+    },
+    {
+      "id": "lightsOff",
+      "label": "Lights Off",
+      "emoji": "🌙",
+      "handler": "goveePower",
+      "args": [
+        false,
+        "192.168.40.8",
+        4003
+      ],
+      "zone": "quick",
+      "category": "kidMode-lights"
+    },
+    {
+      "id": "lightsToggle",
+      "label": "Toggle Lights",
+      "emoji": "🔁",
+      "handler": "goveeTogglePower",
+      "args": [
+        "192.168.40.8",
+        4003
+      ],
+      "zone": "quick",
+      "category": "kidMode-lights"
     }
   ]
 }

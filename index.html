@@ -12,6 +12,10 @@
         button {
             touch-action: manipulation;
         }
+        body.fireworks-open,
+        body.timer-open {
+            overflow: hidden;
+        }
         .showcase-highlight {
             outline: 4px solid rgba(255, 255, 255, 0.7);
             outline-offset: 4px;
@@ -27,16 +31,36 @@
             transition: stroke-dashoffset 0.2s linear;
         }
         .fireworks-overlay {
-            backdrop-filter: blur(12px);
-            background: rgba(15, 23, 42, 0.85);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: clamp(1.5rem, 4vw, 3rem);
         }
         .fireworks-stage {
-            position: relative;
-            width: 100%;
-            height: 300px;
+            position: absolute;
+            inset: 0;
             overflow: hidden;
-            border-radius: 1.5rem;
-            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), rgba(15,23,42,0.6));
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12), rgba(15,23,42,0.65));
+        }
+        .fireworks-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 640px;
+            margin: auto;
+            padding: 2.5rem 1.5rem 3rem;
+            text-align: center;
         }
         .firework-particle {
             position: absolute;
@@ -202,6 +226,97 @@
                 </div>
             </div>
             <p id="toddlerContentCacheInfo" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100"></p>
+        </section>
+
+        <section id="goveeSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Govee Lights (H60A1)</h2>
+                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Turn on LAN control in the Govee Home app, note the light’s IP, then paste it here to toggle power, dim, or change colors without the cloud.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start">
+                <div class="space-y-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="flex flex-col gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Device IP</span>
+                            <input
+                                id="goveeIpInput"
+                                type="text"
+                                inputmode="decimal"
+                                placeholder="192.168.1.120"
+                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
+                        </label>
+                        <label class="flex flex-col gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Port (default 4003)</span>
+                            <input
+                                id="goveePortInput"
+                                type="number"
+                                inputmode="numeric"
+                                min="1"
+                                max="65535"
+                                placeholder="4003"
+                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
+                        </label>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <button
+                            onclick="goveeSaveSettings()"
+                            class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
+                            Save LAN Settings
+                        </button>
+                        <button
+                            onclick="goveePower(true)"
+                            class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/60">
+                            Turn On
+                        </button>
+                        <button
+                            onclick="goveePower(false)"
+                            class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                            Turn Off
+                        </button>
+                    </div>
+
+                    <div class="rounded-3xl bg-white/10 p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Brightness</span>
+                            <span id="goveeBrightnessValue" class="text-sm font-semibold text-white">80%</span>
+                        </div>
+                        <input
+                            id="goveeBrightnessSlider"
+                            type="range"
+                            min="1"
+                            max="100"
+                            step="1"
+                            class="mt-3 w-full accent-white/80"
+                        />
+                    </div>
+
+                    <div class="space-y-3">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Quick Colors</span>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="goveeSetWarmWhite()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ffe6c8] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
+                            <button onclick="goveeSetOceanBlue()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#78b8ff] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
+                            <button onclick="goveeSetSunsetGlow()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ff9966] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
+                            <button onclick="goveeSetColor(255,0,120)" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ff0078] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
+                            <button onclick="goveeSetColor(0,255,180)" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#00ffb4] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-4">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">LAN Control Tips</h3>
+                    <ul class="space-y-2 text-sm text-indigo-100/90">
+                        <li>Enable LAN Control in the Govee Home app (Device Settings → LAN Control).</li>
+                        <li>Connect your phone and light to the same network, then note the IP shown in the app.</li>
+                        <li>Lights speak HTTP JSON on port 4003. Only devices on your LAN can reach them.</li>
+                    </ul>
+                    <p class="text-xs text-indigo-100/80">You can trigger these helpers from kid buttons by using handlers like <code>goveePower</code>, <code>goveeSetColor</code>, or <code>goveeSetWarmWhite</code>.</p>
+                </div>
+            </div>
+
+            <p id="goveeStatus" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">Enter the LAN IP to get started.</p>
         </section>
 
         <section id="toddlerControls" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
@@ -419,26 +534,17 @@
 
     <div
         id="fireworksOverlay"
-        class="fireworks-overlay fixed inset-0 z-40 hidden items-center justify-center px-6 py-12 text-white">
-        <div class="w-full max-w-2xl space-y-6 rounded-3xl bg-white/10 p-8 shadow-2xl">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-3xl font-extrabold tracking-tight">🎆 Fireworks!</h2>
-                    <p id="fireworksLabel" class="mt-1 text-sm text-indigo-100">Celebration time.</p>
-                </div>
-                <button
-                    onclick="stopFireworksShow()"
-                    class="rounded-full bg-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                    Close
-                </button>
+        class="fireworks-overlay fixed inset-0 z-40 hidden text-white">
+        <div id="fireworksStage" class="fireworks-stage"></div>
+        <div class="fireworks-content">
+            <div class="space-y-3">
+                <h2 class="text-4xl font-extrabold tracking-tight drop-shadow-lg">🎆 Fireworks Celebration</h2>
+                <p id="fireworksLabel" class="text-base font-semibold text-indigo-100 drop-shadow-md">Celebration time.</p>
             </div>
-
-            <div id="fireworksStage" class="fireworks-stage"></div>
-
             <button
                 onclick="stopFireworksShow()"
-                class="w-full rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/60">
-                Done celebrating
+                class="rounded-full bg-white/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
+                End Fireworks
             </button>
         </div>
     </div>

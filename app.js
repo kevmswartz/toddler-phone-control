@@ -22,6 +22,21 @@ const TODDLER_CONTENT_CACHE_KEY = 'toddler_content_cache';
 const TODDLER_CONTENT_CACHE_TIME_KEY = 'toddler_content_cache_time';
 const TODDLER_CONTENT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
 const TIMER_CIRCUMFERENCE = 2 * Math.PI * 54;
+const GOVEE_IP_STORAGE_KEY = 'govee_ip';
+const GOVEE_PORT_STORAGE_KEY = 'govee_port';
+const GOVEE_BRIGHTNESS_STORAGE_KEY = 'govee_brightness';
+const GOVEE_DEFAULT_PORT = 4003;
+const GOVEE_MIN_BRIGHTNESS = 1;
+const GOVEE_POWER_STATE_PREFIX = 'govee_power_state_';
+const GOVEE_STATUS_VARIANTS = {
+    info: 'bg-white/10 text-indigo-100',
+    success: 'bg-emerald-500/20 text-emerald-50 border border-emerald-200/40',
+    error: 'bg-rose-500/20 text-rose-50 border border-rose-200/40'
+};
+const capacitorRuntime = typeof window !== 'undefined' ? window.Capacitor : undefined;
+const isNativeRuntime = Boolean(capacitorRuntime?.isNativePlatform?.() && capacitorRuntime.getPlatformId?.() !== 'web');
+const capacitorHttpPlugin = isNativeRuntime ? capacitorRuntime?.Plugins?.Http : null;
+const goveeLanBridge = typeof window !== 'undefined' ? window.goveeLan : undefined;
 
 // Store latest media data for detailed view
 let latestMediaData = null;
@@ -178,6 +193,7 @@ function registerQuickActionCooldown(source) {
 // Initialize on load
 window.addEventListener('DOMContentLoaded', async () => {
     updateToddlerContentCacheMeta();
+    initGoveeControls();
     await loadToddlerContent();
 
     const savedIp = localStorage.getItem(STORAGE_KEY);
@@ -642,6 +658,9 @@ function startToddlerTimer(durationSeconds = 300, label = 'Timer') {
     timerLabelText = displayLabel || 'Timer';
 
     labelEl.textContent = `${timerLabelText} — ${formatTimerDuration(sanitizedSeconds)} timer`;
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.add('timer-open');
+    }
     overlay.classList.remove('hidden');
     overlay.classList.add('flex');
 
@@ -700,6 +719,9 @@ function cancelToddlerTimer({ silent = false } = {}) {
         cancelAnimationFrame(timerAnimationFrame);
         timerAnimationFrame = null;
     }
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.remove('timer-open');
+    }
     const overlay = document.getElementById('timerOverlay');
     const progressCircle = document.getElementById('timerProgressCircle');
     const countdownEl = document.getElementById('timerCountdown');
@@ -738,6 +760,9 @@ function startFireworksShow(durationSeconds = 6, message = 'Fireworks!') {
     const messageText = String(message || 'Fireworks!').trim() || 'Fireworks!';
 
     labelEl.textContent = messageText;
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.add('fireworks-open');
+    }
     overlay.classList.remove('hidden');
     overlay.classList.add('flex');
 
@@ -745,6 +770,7 @@ function startFireworksShow(durationSeconds = 6, message = 'Fireworks!') {
         createFireworkBurst(stage);
     };
 
+    stage.innerHTML = '';
     launchBurst();
     fireworksInterval = setInterval(launchBurst, 700);
     fireworksTimeout = setTimeout(() => {
@@ -774,6 +800,9 @@ function stopFireworksShow({ silent = false } = {}) {
     if (stage) {
         stage.innerHTML = '';
     }
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.classList.remove('fireworks-open');
+    }
 
     if (!silent) {
         showStatus('Fireworks finished.', 'info');
@@ -783,16 +812,16 @@ function stopFireworksShow({ silent = false } = {}) {
 function createFireworkBurst(stage) {
     if (!stage) return;
     const colors = ['#fde68a', '#fca5a5', '#a5b4fc', '#7dd3fc', '#f9a8d4', '#bbf7d0'];
-    const particleCount = 18;
+    const particleCount = 24;
     const rect = stage.getBoundingClientRect();
     const stageWidth = rect.width || stage.clientWidth || 1;
     const stageHeight = rect.height || stage.clientHeight || 1;
-    const originX = stageWidth / 2;
-    const originY = stageHeight / 2;
+    const originX = stageWidth * (0.15 + Math.random() * 0.7);
+    const originY = stageHeight * (0.25 + Math.random() * 0.5);
 
     for (let i = 0; i < particleCount; i++) {
         const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
-        const distance = 80 + Math.random() * 80;
+        const distance = 120 + Math.random() * 200;
         const targetX = originX + Math.cos(angle) * distance;
         const targetY = originY + Math.sin(angle) * distance;
 
@@ -800,14 +829,408 @@ function createFireworkBurst(stage) {
         particle.className = 'firework-particle';
         particle.style.setProperty('--x', `${(targetX / stageWidth) * 100}%`);
         particle.style.setProperty('--y', `${(targetY / stageHeight) * 100}%`);
-        particle.style.background = colors[i % colors.length];
-        particle.style.animationDuration = `${700 + Math.random() * 500}ms`;
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.animationDuration = `${650 + Math.random() * 650}ms`;
+        particle.style.boxShadow = `0 0 20px 4px ${particle.style.background}`;
 
         stage.appendChild(particle);
 
         setTimeout(() => {
             particle.remove();
         }, 1100);
+    }
+}
+
+function getStoredGoveeConfig() {
+    const ip = localStorage.getItem(GOVEE_IP_STORAGE_KEY) || '';
+    const portValue = localStorage.getItem(GOVEE_PORT_STORAGE_KEY);
+    const port = portValue ? Number(portValue) : null;
+    return { ip, port: port && Number.isFinite(port) ? port : null };
+}
+
+function setStoredGoveeConfig({ ip, port }) {
+    if (ip) {
+        localStorage.setItem(GOVEE_IP_STORAGE_KEY, ip.trim());
+    } else {
+        localStorage.removeItem(GOVEE_IP_STORAGE_KEY);
+    }
+
+    if (port) {
+        localStorage.setItem(GOVEE_PORT_STORAGE_KEY, String(port));
+    } else {
+        localStorage.removeItem(GOVEE_PORT_STORAGE_KEY);
+    }
+    updateGoveeUI();
+}
+
+function getStoredGoveeBrightness() {
+    const raw = localStorage.getItem(GOVEE_BRIGHTNESS_STORAGE_KEY);
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed) && parsed >= GOVEE_MIN_BRIGHTNESS && parsed <= 100) {
+        return parsed;
+    }
+    return 80;
+}
+
+function setStoredGoveeBrightness(value) {
+    localStorage.setItem(GOVEE_BRIGHTNESS_STORAGE_KEY, String(value));
+}
+
+function getGoveePowerStateKey(host, port) {
+    return `${GOVEE_POWER_STATE_PREFIX}${host}:${port}`;
+}
+
+function getStoredGoveePowerState(target) {
+    const key = getGoveePowerStateKey(target.host, target.port);
+    const raw = localStorage.getItem(key);
+    if (raw === 'on') return true;
+    if (raw === 'off') return false;
+    return null;
+}
+
+function setStoredGoveePowerState(target, state) {
+    const key = getGoveePowerStateKey(target.host, target.port);
+    localStorage.setItem(key, state ? 'on' : 'off');
+}
+
+function parseGoveeOverrides(ipOrOptions, portArg) {
+    if (Array.isArray(ipOrOptions)) {
+        const [first, second] = ipOrOptions;
+        return parseGoveeOverrides(first, second ?? portArg);
+    }
+
+    const overrides = {};
+
+    if (typeof ipOrOptions === 'object' && ipOrOptions !== null) {
+        if (ipOrOptions.ip || ipOrOptions.host) {
+            overrides.ip = ipOrOptions.ip ?? ipOrOptions.host;
+        }
+        if (ipOrOptions.port !== undefined) {
+            overrides.port = ipOrOptions.port;
+        }
+    } else if (typeof ipOrOptions === 'string' && ipOrOptions.trim()) {
+        overrides.ip = ipOrOptions.trim();
+    } else if (typeof ipOrOptions === 'number' && Number.isFinite(ipOrOptions)) {
+        overrides.port = ipOrOptions;
+    }
+
+    if (portArg !== undefined && portArg !== null && portArg !== '') {
+        overrides.port = portArg;
+    }
+
+    return overrides;
+}
+
+function resolveGoveeTarget(overrides = {}) {
+    const { ip: storedIp, port: storedPort } = getStoredGoveeConfig();
+    let ipCandidate = overrides.ip !== undefined && overrides.ip !== null && String(overrides.ip).trim()
+        ? String(overrides.ip).trim()
+        : (storedIp || '');
+
+    if (!ipCandidate) {
+        throw new Error('Enter the Govee light IP address in settings or pass it into the button.');
+    }
+
+    let protocol = 'http://';
+    const protocolMatch = ipCandidate.match(/^(https?:\/\/)/i);
+    if (protocolMatch) {
+        protocol = protocolMatch[1].toLowerCase();
+        ipCandidate = ipCandidate.slice(protocolMatch[1].length);
+    }
+
+    if (ipCandidate.includes('/')) {
+        ipCandidate = ipCandidate.split('/')[0];
+    }
+
+    let host = ipCandidate;
+    let explicitPort = null;
+
+    if (host.includes(':')) {
+        const hostParts = host.split(':');
+        const potentialPort = Number(hostParts.pop());
+        if (Number.isFinite(potentialPort)) {
+            explicitPort = potentialPort;
+        } else {
+            hostParts.push(String(potentialPort));
+        }
+        host = hostParts.join(':') || host;
+    }
+
+    let port = overrides.port !== undefined && overrides.port !== null && overrides.port !== ''
+        ? Number(overrides.port)
+        : (explicitPort ?? storedPort ?? GOVEE_DEFAULT_PORT);
+
+    if (!Number.isFinite(port) || port <= 0) {
+        port = GOVEE_DEFAULT_PORT;
+    }
+
+    return { protocol, host, port };
+}
+
+function buildGoveeUrl(pathname = '/devices/control', overrides = {}) {
+    const target = resolveGoveeTarget(overrides);
+    const safePath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+    return {
+        url: `${target.protocol}${target.host}:${target.port}${safePath}`,
+        target
+    };
+}
+
+function setGoveeStatus(message, variant = 'info') {
+    const statusEl = document.getElementById('goveeStatus');
+    if (!statusEl) return;
+
+    const baseClasses = 'mt-4 rounded-2xl px-4 py-3 text-sm font-semibold transition-colors';
+    const variantClasses = GOVEE_STATUS_VARIANTS[variant] || GOVEE_STATUS_VARIANTS.info;
+    statusEl.className = `${baseClasses} ${variantClasses}`;
+    statusEl.textContent = message;
+}
+
+async function sendGoveeCommand(command, overrides = {}) {
+    const { url, target } = buildGoveeUrl('/devices/control', overrides);
+    const payload = { msg: command };
+
+    if (goveeLanBridge?.send) {
+        await goveeLanBridge.send({ host: target.host, port: target.port, body: payload });
+        return { data: null, target };
+    }
+
+    if (capacitorHttpPlugin) {
+        const response = await capacitorHttpPlugin.request({
+            url,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: payload,
+            connectTimeout: 5000,
+            readTimeout: 5000
+        });
+        if (response.status < 200 || response.status >= 300) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return { data: response.data, target };
+    }
+
+    throw new Error('Govee LAN control requires a native UDP bridge. Build the Electron app or install a Capacitor UDP plugin.');
+}
+
+function normalizeGoveePowerValue(raw) {
+    if (Array.isArray(raw) && raw.length > 0) {
+        return normalizeGoveePowerValue(raw[0]);
+    }
+
+    if (typeof raw === 'string') {
+        const normalized = raw.trim().toLowerCase();
+        if (['on', 'true', '1', 'yes', 'start'].includes(normalized)) {
+            return true;
+        }
+        if (['off', 'false', '0', 'no', 'stop'].includes(normalized)) {
+            return false;
+        }
+    }
+
+    if (typeof raw === 'number') {
+        return raw > 0;
+    }
+
+    return Boolean(raw);
+}
+
+async function goveePower(turnOn = true, ipOrOptions, portArg) {
+    let overrides = {};
+    let requestedState = turnOn;
+
+    if (Array.isArray(turnOn)) {
+        overrides = { ...overrides, ...parseGoveeOverrides(turnOn[1], turnOn[2]) };
+        requestedState = turnOn[0];
+    } else if (typeof turnOn === 'object' && turnOn !== null) {
+        overrides = { ...overrides, ...parseGoveeOverrides(turnOn) };
+        requestedState = turnOn.value ?? turnOn.state ?? true;
+    }
+
+    overrides = { ...overrides, ...parseGoveeOverrides(ipOrOptions, portArg) };
+    const desired = normalizeGoveePowerValue(requestedState);
+
+    try {
+        const { target } = await sendGoveeCommand({ cmd: 'turn', data: { value: desired ? 1 : 0 } }, overrides);
+        const targetLabel = `${target.host}:${target.port}`;
+        const message = desired
+            ? `Govee lights at ${targetLabel} turned on.`
+            : `Govee lights at ${targetLabel} turned off.`;
+        setStoredGoveePowerState(target, desired);
+        setGoveeStatus(message, 'success');
+        showStatus(message, 'success');
+    } catch (error) {
+        console.error('Govee power command failed', error);
+        setGoveeStatus('Could not reach the Govee light. Double-check the IP and LAN control.', 'error');
+        showStatus('Govee light unreachable. Check the IP and LAN control settings.', 'error');
+    }
+}
+
+async function goveeApplyBrightness(value, ipOrOptions, portArg) {
+    let overrides = {};
+    let requestedValue = value;
+
+    if (Array.isArray(value)) {
+        overrides = { ...overrides, ...parseGoveeOverrides(value[1], value[2]) };
+        requestedValue = value[0];
+    } else if (typeof value === 'object' && value !== null) {
+        overrides = { ...overrides, ...parseGoveeOverrides(value) };
+        requestedValue = value.value ?? value.level ?? getStoredGoveeBrightness();
+    }
+
+    overrides = { ...overrides, ...parseGoveeOverrides(ipOrOptions, portArg) };
+
+    const normalized = Math.max(GOVEE_MIN_BRIGHTNESS, Math.min(100, Math.round(requestedValue)));
+    if (!overrides.ip && !overrides.port) {
+        setStoredGoveeBrightness(normalized);
+    }
+    updateGoveeBrightnessLabel(normalized);
+
+    try {
+        const { target } = await sendGoveeCommand({ cmd: 'brightness', data: { value: normalized } }, overrides);
+        const targetLabel = `${target.host}:${target.port}`;
+        setGoveeStatus(`Brightness set to ${normalized}% for ${targetLabel}.`, 'success');
+    } catch (error) {
+        console.error('Govee brightness command failed', error);
+        setGoveeStatus('Could not update brightness. Make sure LAN control is enabled.', 'error');
+    }
+}
+
+async function goveeSetColor(r, g, b, ipOrOptions, portArg) {
+    let overrides = parseGoveeOverrides(ipOrOptions, portArg);
+
+    if (Array.isArray(r)) {
+        const [red, green, blue, ipOverride, portOverride] = r;
+        overrides = { ...overrides, ...parseGoveeOverrides(ipOverride, portOverride) };
+        return goveeSetColor(red, green ?? 0, blue ?? 0, overrides);
+    }
+
+    if (typeof r === 'object' && r !== null) {
+        overrides = { ...overrides, ...parseGoveeOverrides(r) };
+        return goveeSetColor(r.r ?? r.red ?? 255, r.g ?? r.green ?? 255, r.b ?? r.blue ?? 255, overrides);
+    }
+
+    const color = {
+        r: Math.max(0, Math.min(255, Math.round(r))),
+        g: Math.max(0, Math.min(255, Math.round(g))),
+        b: Math.max(0, Math.min(255, Math.round(b)))
+    };
+
+    try {
+        const { target } = await sendGoveeCommand({ cmd: 'color', data: color }, overrides);
+        const targetLabel = `${target.host}:${target.port}`;
+        setGoveeStatus(`Color set to RGB(${color.r}, ${color.g}, ${color.b}) for ${targetLabel}.`, 'success');
+    } catch (error) {
+        console.error('Govee color command failed', error);
+        setGoveeStatus('Could not change color. Verify LAN control and try again.', 'error');
+    }
+}
+
+async function goveeTogglePower(ipOrOptions, portArg) {
+    const overrides = parseGoveeOverrides(ipOrOptions, portArg);
+    const target = resolveGoveeTarget(overrides);
+    const storedState = getStoredGoveePowerState(target);
+    const desired = !(storedState ?? false);
+    return goveePower(desired, overrides);
+}
+
+async function goveeSetWarmWhite(ipOrOptions, portArg) {
+    await goveeSetColor(255, 230, 200, ipOrOptions, portArg);
+}
+
+async function goveeSetOceanBlue(ipOrOptions, portArg) {
+    await goveeSetColor(120, 180, 255, ipOrOptions, portArg);
+}
+
+async function goveeSetSunsetGlow(ipOrOptions, portArg) {
+    await goveeSetColor(255, 140, 90, ipOrOptions, portArg);
+}
+
+function goveeSaveSettings() {
+    const ipInput = document.getElementById('goveeIpInput');
+    const portInput = document.getElementById('goveePortInput');
+    const ip = ipInput?.value.trim() || '';
+    const portRaw = portInput?.value.trim() || '';
+
+    if (!ip) {
+        showStatus('Enter the Govee IP address (find it in the Govee Home app under LAN control).', 'error');
+        return;
+    }
+
+    let port = null;
+    if (portRaw) {
+        const parsed = Number(portRaw);
+        if (!Number.isFinite(parsed) || parsed <= 0) {
+            showStatus('Enter a valid port number (default is 4003).', 'error');
+            return;
+        }
+        port = parsed;
+    }
+
+    setStoredGoveeConfig({ ip, port });
+    try {
+        const { host, port: resolvedPort } = resolveGoveeTarget({ ip, port });
+        setGoveeStatus(`Saved LAN IP ${host}:${resolvedPort} for Govee lights.`, 'success');
+    } catch (error) {
+        setGoveeStatus('Saved settings, but the IP format looks unusual. Double-check the value if commands fail.', 'error');
+    }
+    showStatus('Govee LAN settings saved! Try the buttons below.', 'success');
+}
+
+function updateGoveeBrightnessLabel(value) {
+    const labelEl = document.getElementById('goveeBrightnessValue');
+    if (labelEl) {
+        labelEl.textContent = `${value}%`;
+    }
+}
+
+function updateGoveeUI() {
+    const { ip, port } = getStoredGoveeConfig();
+    const ipInput = document.getElementById('goveeIpInput');
+    const portInput = document.getElementById('goveePortInput');
+    const brightnessInput = document.getElementById('goveeBrightnessSlider');
+
+    if (ipInput && ipInput !== document.activeElement) {
+        ipInput.value = ip;
+    }
+    if (portInput && portInput !== document.activeElement) {
+        portInput.value = port ? String(port) : '';
+    }
+    if (brightnessInput) {
+        const brightness = getStoredGoveeBrightness();
+        brightnessInput.value = String(brightness);
+        updateGoveeBrightnessLabel(brightness);
+    }
+
+    if (ip) {
+        try {
+            const { host, port: resolvedPort } = resolveGoveeTarget({ ip, port });
+            setGoveeStatus(`Ready to control lights at ${host}:${resolvedPort}.`, 'info');
+        } catch (error) {
+            setGoveeStatus('The saved Govee IP looks invalid. Double-check it in settings.', 'error');
+        }
+    } else {
+        setGoveeStatus('Enter the LAN IP from the Govee Home app to enable light controls.', 'info');
+    }
+}
+
+function handleGoveeBrightnessInput(event) {
+    const value = Number(event.target.value || getStoredGoveeBrightness());
+    updateGoveeBrightnessLabel(value);
+}
+
+function handleGoveeBrightnessChange(event) {
+    const value = Number(event.target.value || getStoredGoveeBrightness());
+    goveeApplyBrightness(value);
+}
+
+function initGoveeControls() {
+    updateGoveeUI();
+
+    const brightnessInput = document.getElementById('goveeBrightnessSlider');
+    if (brightnessInput) {
+        brightnessInput.addEventListener('input', handleGoveeBrightnessInput);
+        brightnessInput.addEventListener('change', handleGoveeBrightnessChange);
     }
 }
 
@@ -841,9 +1264,6 @@ function getSavedIp() {
 }
 
 const RokuTransport = (() => {
-    const capacitor = typeof window !== 'undefined' ? window.Capacitor : undefined;
-    const isNative = Boolean(capacitor?.isNativePlatform?.() && capacitor.getPlatformId?.() !== 'web');
-    const httpPlugin = isNative ? capacitor?.Plugins?.Http : null;
     const xhrSupported = typeof XMLHttpRequest !== 'undefined';
 
     function buildUrl(ip, endpoint) {
@@ -874,7 +1294,7 @@ const RokuTransport = (() => {
 
         const url = buildUrl(ip, endpoint);
 
-        if (httpPlugin) {
+        if (capacitorHttpPlugin) {
             const options = {
                 url,
                 method,
@@ -888,7 +1308,7 @@ const RokuTransport = (() => {
                 options.data = '';
             }
 
-            const response = await httpPlugin.request(options);
+            const response = await capacitorHttpPlugin.request(options);
             if (response.status < 200 || response.status >= 300) {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -958,8 +1378,8 @@ const RokuTransport = (() => {
     return {
         request,
         requestXml,
-        isNative,
-        hasPlugin: () => Boolean(httpPlugin)
+        isNative: isNativeRuntime,
+        hasPlugin: () => Boolean(capacitorHttpPlugin)
     };
 })();
 
@@ -2177,6 +2597,7 @@ function showSettings() {
     });
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
     updateToddlerContentCacheMeta();
+    updateGoveeUI();
     showStatus('Settings unlocked! Advanced controls are now visible.', 'success');
 
     const contentSourceSection = document.getElementById('contentSourceSection');
