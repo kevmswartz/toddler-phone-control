@@ -231,13 +231,6 @@
       "thumbnail": "https://img.youtube.com/vi/XqZsoesa55w/maxresdefault.jpg"
     },
     {
-      "id": "lesson-1",
-      "label": "Lesson #1",
-      "type": "youtube",
-      "thumbnail": "https://i.ytimg.com/vi/A3lvmq-iG4c/hqdefault.jpg",
-      "videoId": "A3lvmq-iG4c"
-    },
-    {
       "id": "lightsOn",
       "label": "Lights On",
       "emoji": "💡",
@@ -274,6 +267,13 @@
       ],
       "zone": "quick",
       "category": "kidMode-lights"
+    },
+    {
+      "id": "lesson-1",
+      "label": "Lesson #1",
+      "type": "youtube",
+      "thumbnail": "https://i.ytimg.com/vi/A3lvmq-iG4c/hqdefault.jpg",
+      "videoId": "A3lvmq-iG4c"
     }
   ]
 }
