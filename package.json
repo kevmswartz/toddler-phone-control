@@ -13,7 +13,8 @@
     "@capacitor-community/electron": "^5.0.0",
     "@capacitor-community/http": "^1.4.1",
     "@capacitor/android": "^5.7.8",
-    "@capacitor/core": "^5.7.8"
+    "@capacitor/core": "^5.7.8",
+    "canvas-confetti": "^1.9.3"
   },
   "scripts": {
     "build": "node scripts/build.js",

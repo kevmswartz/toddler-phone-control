@@ -65,6 +65,13 @@ try {
         Copy-Item -Path $publicSrc -Destination $publicDest -Recurse -Force
     }
 
+    $vendorSrc = Join-Path $distDir "vendor"
+    if (Test-Path $vendorSrc) {
+        $vendorDest = Join-Path $electronAppDir "vendor"
+        Remove-Item $vendorDest -Recurse -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path $vendorSrc -Destination $vendorDest -Recurse -Force
+    }
+
     Invoke-Step -Name "Start Electron shell" -WorkingDirectory $electronDir -Arguments @('run', 'electron:start')
 }
 catch {

@@ -754,9 +754,8 @@ function cancelToddlerTimer({ silent = false } = {}) {
 function startFireworksShow(durationSeconds = 6, message = 'Fireworks!') {
     const overlay = document.getElementById('fireworksOverlay');
     const labelEl = document.getElementById('fireworksLabel');
-    const stage = document.getElementById('fireworksStage');
 
-    if (!overlay || !labelEl || !stage) {
+    if (!overlay || !labelEl) {
         console.warn('Fireworks overlay elements are missing.');
         return;
     }
@@ -774,13 +773,36 @@ function startFireworksShow(durationSeconds = 6, message = 'Fireworks!') {
     overlay.classList.remove('hidden');
     overlay.classList.add('flex');
 
-    const launchBurst = () => {
-        createFireworkBurst(stage, { particleCount: 36 + Math.floor(Math.random() * 12) });
-    };
+    // Use canvas-confetti if available
+    if (typeof confetti === 'function') {
+        const colors = ['#fde68a', '#fca5a5', '#a5b4fc', '#7dd3fc', '#f9a8d4', '#bbf7d0'];
 
-    stage.innerHTML = '';
-    launchBurst();
-    fireworksInterval = setInterval(launchBurst, 550);
+        const launchConfetti = () => {
+            // Launch multiple bursts from different positions
+            const count = 2 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 50,
+                        spread: 70,
+                        origin: { x: Math.random() * 0.6 + 0.2, y: Math.random() * 0.5 + 0.3 },
+                        colors: colors,
+                        shapes: ['circle', 'square'],
+                        gravity: 0.8,
+                        scalar: 1.2,
+                        drift: 0,
+                        ticks: 200
+                    });
+                }, i * 100);
+            }
+        };
+
+        launchConfetti();
+        fireworksInterval = setInterval(launchConfetti, 600);
+    } else {
+        console.warn('Canvas confetti library not loaded');
+    }
+
     fireworksTimeout = setTimeout(() => {
         stopFireworksShow({ silent: true });
     }, durationMs);
@@ -799,14 +821,15 @@ function stopFireworksShow({ silent = false } = {}) {
         fireworksTimeout = null;
     }
 
+    // Reset confetti if available
+    if (typeof confetti === 'function' && typeof confetti.reset === 'function') {
+        confetti.reset();
+    }
+
     const overlay = document.getElementById('fireworksOverlay');
-    const stage = document.getElementById('fireworksStage');
     if (overlay) {
         overlay.classList.add('hidden');
         overlay.classList.remove('flex');
-    }
-    if (stage) {
-        stage.innerHTML = '';
     }
     if (typeof document !== 'undefined' && document.body) {
         document.body.classList.remove('fireworks-open');

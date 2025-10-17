@@ -12,6 +12,10 @@ const staticFiles = [
   'toddler-content.json'
 ];
 
+const vendorFiles = [
+  { src: 'node_modules/canvas-confetti/dist/confetti.browser.js', dest: 'vendor/confetti.js' }
+];
+
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
@@ -89,6 +93,21 @@ function build() {
   cleanDist();
   buildTailwind();
   staticFiles.forEach(file => copyFile(file, distDir));
+
+  // Copy vendor files
+  vendorFiles.forEach(({ src, dest }) => {
+    const srcPath = path.join(projectRoot, src);
+    const destPath = path.join(distDir, dest);
+
+    if (fs.existsSync(srcPath)) {
+      ensureDir(path.dirname(destPath));
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`Copied vendor file: ${dest}`);
+    } else {
+      console.warn(`Vendor file not found: ${src}`);
+    }
+  });
+
   copyDirectory('public', distDir);
   console.log(`Build complete. Assets copied to ${distDir}`);
 }
