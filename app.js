@@ -35,7 +35,8 @@ const GOVEE_STATUS_VARIANTS = {
 };
 const capacitorRuntime = typeof window !== 'undefined' ? window.Capacitor : undefined;
 const isNativeRuntime = Boolean(capacitorRuntime?.isNativePlatform?.() && capacitorRuntime.getPlatformId?.() !== 'web');
-const capacitorHttpPlugin = isNativeRuntime ? capacitorRuntime?.Plugins?.Http : null;
+// Try multiple ways to access the HTTP plugin - @capacitor-community/http may export as Http or CapacitorHttp
+const capacitorHttpPlugin = isNativeRuntime ? (capacitorRuntime?.Plugins?.Http || capacitorRuntime?.Plugins?.CapacitorHttp) : null;
 const goveeLanBridge = typeof window !== 'undefined' ? window.goveeLan : undefined;
 
 // Store latest media data for detailed view
@@ -192,6 +193,13 @@ function registerQuickActionCooldown(source) {
 
 // Initialize on load
 window.addEventListener('DOMContentLoaded', async () => {
+    // Log Capacitor plugin availability for debugging
+    if (isNativeRuntime) {
+        console.log('Running in native Capacitor environment');
+        console.log('Available plugins:', capacitorRuntime?.Plugins ? Object.keys(capacitorRuntime.Plugins) : 'none');
+        console.log('HTTP plugin available:', Boolean(capacitorHttpPlugin));
+    }
+
     updateToddlerContentCacheMeta();
     initGoveeControls();
     await loadToddlerContent();
@@ -1011,7 +1019,8 @@ async function sendGoveeCommand(command, overrides = {}) {
         return { data: response.data, target };
     }
 
-    throw new Error('Govee LAN control requires a native UDP bridge. Build the Electron app or install a Capacitor UDP plugin.');
+    const platformInfo = isNativeRuntime ? `(Running on ${capacitorRuntime?.getPlatformId?.()})` : '(Running in web mode)';
+    throw new Error(`Govee LAN control requires the Capacitor HTTP plugin. ${platformInfo} Make sure @capacitor-community/http is installed and run 'npm run sync' to update native projects.`);
 }
 
 function normalizeGoveePowerValue(raw) {
