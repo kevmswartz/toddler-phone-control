@@ -33,11 +33,39 @@ const GOVEE_STATUS_VARIANTS = {
     success: 'bg-emerald-500/20 text-emerald-50 border border-emerald-200/40',
     error: 'bg-rose-500/20 text-rose-50 border border-rose-200/40'
 };
+const tauriBridge = typeof window !== 'undefined' ? window.__TAURI__ : undefined;
+const tauriInvoke = (() => {
+    if (!tauriBridge) return undefined;
+    if (typeof tauriBridge.invoke === 'function') {
+        return tauriBridge.invoke.bind(tauriBridge);
+    }
+    if (typeof tauriBridge.core?.invoke === 'function') {
+        return tauriBridge.core.invoke.bind(tauriBridge.core);
+    }
+    if (typeof tauriBridge.tauri?.invoke === 'function') {
+        return tauriBridge.tauri.invoke.bind(tauriBridge.tauri);
+    }
+    return undefined;
+})();
 const capacitorRuntime = typeof window !== 'undefined' ? window.Capacitor : undefined;
 const isNativeRuntime = Boolean(capacitorRuntime?.isNativePlatform?.() && capacitorRuntime.getPlatformId?.() !== 'web');
 // Try multiple ways to access the HTTP plugin - @capacitor-community/http may export as Http or CapacitorHttp
 const capacitorHttpPlugin = isNativeRuntime ? (capacitorRuntime?.Plugins?.Http || capacitorRuntime?.Plugins?.CapacitorHttp) : null;
-const goveeLanBridge = typeof window !== 'undefined' ? window.goveeLan : undefined;
+const goveeLanBridge = (() => {
+    if (typeof window === 'undefined') return undefined;
+    if (!window.goveeLan && tauriInvoke) {
+        window.goveeLan = {
+            send: async ({ host, port, body }) => {
+                await tauriInvoke('govee_send', { host, port, body: body ?? '' });
+                return { host, port };
+            },
+            discover: async (options = {}) => {
+                return tauriInvoke('govee_discover', options);
+            }
+        };
+    }
+    return window.goveeLan;
+})();
 
 // Store latest media data for detailed view
 let latestMediaData = null;
@@ -1326,6 +1354,34 @@ const RokuTransport = (() => {
         }
 
         const url = buildUrl(ip, endpoint);
+        const methodUpper = String(method || 'GET').toUpperCase();
+
+        if (tauriInvoke) {
+            try {
+                if (methodUpper === 'GET') {
+                    const raw = await tauriInvoke('roku_get', { url });
+                    if (responseType === 'json') {
+                        try {
+                            return JSON.parse(raw);
+                        } catch (error) {
+                            throw new Error('Failed to parse Roku JSON response');
+                        }
+                    }
+                    return raw;
+                } else {
+                    const payload =
+                        body === undefined || body === null
+                            ? ''
+                            : typeof body === 'string'
+                            ? body
+                            : JSON.stringify(body);
+                    await tauriInvoke('roku_post', { url, body: payload });
+                    return '';
+                }
+            } catch (error) {
+                console.warn('Tauri Roku command failed, falling back to web transport:', error);
+            }
+        }
 
         if (capacitorHttpPlugin) {
             const options = {
@@ -1396,7 +1452,7 @@ const RokuTransport = (() => {
             return await response.text();
         } catch (error) {
             if (error instanceof TypeError || error.message.includes('Failed to fetch')) {
-                throw new Error('Direct Roku requests were blocked. Build and run with Capacitor to avoid browser CORS limits.');
+                throw new Error('Direct Roku requests were blocked. Build and run with the Tauri shell to avoid browser CORS limits.');
             }
             throw error;
         }

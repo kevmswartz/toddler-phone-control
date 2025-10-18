@@ -20,55 +20,43 @@ A web-based remote control for your Roku device with app launching capabilities.
 npm install
 ```
 
-### Build & Sync Web Assets
+### Build Web Assets
 
-Capacitor copies the compiled web assets from `dist/` into each native platform. Rebuild and sync whenever you change HTML/JS/CSS or toddler content:
+The UI ships from the `dist/` folder. Rebuild whenever you change HTML/JS/CSS or toddler content:
 
 ```bash
 npm run build      # compile into dist/
-npm run sync       # run build + copy into android/ and electron/
 ```
+
+During development `npm run dev` keeps the build script running in watch mode.
 
 ## Running the App
 
-### Android (Capacitor)
+### Desktop (Tauri)
 
 ```bash
-npm run android        # builds web assets, syncs, and opens Android Studio
+npm run tauri:dev      # build web assets (watch) and launch the desktop shell
 ```
 
-From Android Studio you can run on an emulator or a USB-connected device. The Android project has cleartext traffic enabled so the app can talk to your Roku over HTTP on the local network.
-
-### Windows (Electron)
+Packaging a distributable build:
 
 ```bash
-npm run sync           # build & sync web assets to all platforms
-cd electron
-npm install            # only needed the first time
-npm run electron:start # build once and launch the desktop shell
+npm run tauri:build
 ```
 
-Or use the PowerShell helper to run build → sync → Electron start in one go:
-
-```powershell
-./scripts/run-electron.ps1
-```
-
-The helper rebuilds, runs `npx cap sync`, copies fresh web assets into `electron/app/`, and finally launches the Electron shell so you always see the latest UI.
-
-You can generate a packaged build (folder output) with:
-
-```bash
-npm run electron:pack
-```
+This produces platform installers/bundles under `src-tauri/target/`.
 
 ### Browser Preview (CORS limited)
 
-You can still open `index.html` directly or serve `dist/` with any static server, but Roku devices will reject the requests because of CORS unless you run within the same network and disable CORS in the browser. Native builds are the recommended path.
+You can still open `index.html` directly or serve `dist/` with any static server, but Roku devices will reject the requests because of CORS unless you run within the same network and disable CORS in the browser. Native builds via Tauri are the recommended path.
 
-## Why Capacitor?
+### Legacy Capacitor Projects
 
-The Roku External Control Protocol does not send CORS headers, so browser-based fetches are blocked. The Capacitor builds ship with the native HTTP plugin, letting the app call the Roku over the local network without any extra proxy or cloud hosting.
+The previous Capacitor-based Android/Electron shells remain under `android/` and `electron/` for reference, but the active tooling now lives in `src-tauri/`.
+
+## Why Tauri?
+
+The Roku External Control Protocol does not send CORS headers, so browser-based fetches are blocked. The Tauri shell provides native bridges (`roku_get`, `roku_post`, `govee_send`, `govee_discover`, `roomsense_scan`) so the web UI can talk to the local network without needing a proxy or cloud service. On platforms where the Tauri runtime is available, these commands are invoked directly from the existing JavaScript SDK, keeping the browser fallback for basic previews. The `roomsense_scan` command is currently a stub that returns an unsupported error until the BLE + Wi-Fi bridge is implemented.
 
 ## Kid Button Content
 
@@ -99,13 +87,13 @@ The Roku External Control Protocol does not send CORS headers, so browser-based 
 - Long-press the gear button in the top-left corner for about two seconds to open the PIN pad (default `1234`).
 - After entering the PIN, the advanced sections (connection settings, kid button source, macros, etc.) become visible.
 - When you are finished, use the **Hide Advanced Controls** button at the top of the advanced area to tuck everything away again for kid mode.
-- The **Govee Lights** panel lets you enter the H60A1’s LAN IP (from the Govee Home app), set the port (default `4003`), and trigger power, brightness, or quick colors over the local network. Those helper functions (`goveePower`, `goveeSetColor`, `goveeSetWarmWhite`, etc.) accept optional IP/port overrides when used from kid-mode buttons so each button can target its own strip. LAN control is sent via UDP multicast, so Electron builds handle it natively; on mobile you’ll need a Capacitor UDP plugin providing a `window.goveeLan.send` bridge.
+- The **Govee Lights** panel lets you enter the H60A1’s LAN IP (from the Govee Home app), set the port (default `4003`), and trigger power, brightness, or quick colors over the local network. Those helper functions (`goveePower`, `goveeSetColor`, `goveeSetWarmWhite`, etc.) accept optional IP/port overrides when used from kid-mode buttons so each button can target its own strip. LAN control now routes through the Tauri `govee_send` command (with a matching browser fallback), so desktop builds work without additional plugins.
 
 ### Collaboration Tips
 
 - Treat `toddler-content.json` as data: contributors can branch from `main`, run `npm run content -- add-*`, and open a PR that only updates the JSON (and optionally screenshots/assets). After merging, the remote raw URL instantly delivers the new buttons to every build.
 - If you keep content on a dedicated branch (e.g., `kid-content`), set the raw URL to `https://raw.githubusercontent.com/<org>/<repo>/<branch>/toddler-content.json`. The app will re-fetch on every launch and fall back to cached data if offline.
-- Remember to run `npm run sync` after updating toddler content so the packaged Electron/Android app bundles the latest defaults.
+- Remember to run `npm run build` (or let `npm run tauri:build` do it for you) after updating toddler content so the native bundles ship with the latest defaults.
 
 ## Finding Your Roku IP
 
@@ -136,3 +124,4 @@ The Roku External Control Protocol does not send CORS headers, so browser-based 
 - App favorites/quick launch
 - Multiple Roku device support
 - Custom macros/sequences
+- Native RoomSense scanning via the `roomsense_scan` bridge
