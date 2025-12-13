@@ -4,7 +4,6 @@
   "description": "Default capabilities for Roku Control app",
   "windows": ["main"],
   "permissions": [
-    "core:default",
-    "blec:default"
+    "core:default"
   ]
 }

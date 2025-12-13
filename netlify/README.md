@@ -129,7 +129,7 @@ Updates the configuration in blob storage. **Requires passphrase authentication.
 
 **Example:**
 ```bash
-curl -X POST https://toddler-phone-control.netlify.app/api/config \
+curl -X POST https://toddler-roku.netlify.app/api/config \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer blue mountain coffee morning sunshine" \
   -d '{"tabs": [...]}'
@@ -254,7 +254,7 @@ List all uploaded images from Netlify Blobs.
 Update your app's configuration to point to the Netlify endpoint:
 
 ```javascript
-const CONFIG_URL = 'https://toddler-phone-control.netlify.app/api/config';
+const CONFIG_URL = 'https://toddler-roku.netlify.app/api/config';
 
 // Fetch configuration
 async function loadConfig() {
@@ -269,7 +269,7 @@ async function loadConfig() {
 To upload your initial configuration, you'll need your passphrase (default: `blue mountain coffee morning sunshine`):
 
 ```bash
-curl -X POST https://toddler-phone-control.netlify.app/api/config-import \
+curl -X POST https://toddler-roku.netlify.app/api/config-import \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer blue mountain coffee morning sunshine" \
   -d '{"key": "app-config", "data": {...}}'
@@ -278,7 +278,7 @@ curl -X POST https://toddler-phone-control.netlify.app/api/config-import \
 Or use the import endpoint with JavaScript:
 
 ```javascript
-fetch('https://toddler-phone-control.netlify.app/api/config-import', {
+fetch('https://toddler-roku.netlify.app/api/config-import', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

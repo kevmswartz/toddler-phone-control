@@ -10,9 +10,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@mnlphlp/plugin-blec": "^0.8.0",
     "@netlify/blobs": "^10.3.3",
-    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/api": "^2.9.0",
     "canvas-confetti": "^1.9.3"
   },
   "scripts": {
@@ -28,7 +27,7 @@
     "android:build": "npm run build && npx tauri android build"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.8.0",
+    "@tauri-apps/cli": "^2.9.0",
     "@vitest/ui": "^4.0.8",
     "esbuild": "^0.27.0",
     "jsdom": "^27.2.0",

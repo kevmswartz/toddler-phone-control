@@ -356,7 +356,7 @@ Update content, images, and settings without rebuilding the app:
 1. Deploy this repo to Netlify (already configured via `netlify.toml`)
 2. Set your 5-word passphrase as environment variable `CONFIG_PASSPHRASE`
 3. Upload your config via the Netlify admin UI or API
-4. In app settings, set remote URL: `https://toddler-phone-control.netlify.app/api/config`
+4. In app settings, set remote URL: `https://toddler-roku.netlify.app/api/config`
 
 **Features:**
 - 🎨 Upload images directly to Netlify Blobs

@@ -13,6 +13,7 @@ const INLINE_VARIANTS = {
     success: 'bg-emerald-500/20 text-emerald-50 border border-emerald-200/40',
     error: 'bg-rose-500/20 text-rose-50 border border-rose-200/40'
 };
+const FALLBACK_THUMB_PLACEHOLDER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 16 9" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%239c27b0"/><stop offset="1" stop-color="%236367f1"/></linearGradient></defs><rect width="16" height="9" fill="url(%23g)"/><text x="8" y="5" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="1.6" text-anchor="middle" dominant-baseline="middle">Video</text></svg>';
 const QUICK_ACTION_COOLDOWN_MS = 1000;
 const quickActionCooldowns = new Map();
 const MACRO_STORAGE_KEY = 'roku_macros';
@@ -21,7 +22,7 @@ const APP_CONFIG_PATH = `${CONFIG_BASE_PATH}/app-config.json`;
 const APP_CONFIG_CUSTOM_PATH = `${CONFIG_BASE_PATH}/app-config.custom.json`;
 const BUTTON_TYPES_CONFIG_PATH = `${CONFIG_BASE_PATH}/button-types.json`;
 const TODDLER_CONTENT_PASSPHRASE_KEY = 'toddler_content_passphrase';
-const NETLIFY_CONFIG_API_BASE = 'https://toddler-phone-control.netlify.app/api/config';
+const NETLIFY_CONFIG_API_BASE = 'https://toddler-roku.netlify.app/api/config';
 const TIMER_CIRCUMFERENCE = 2 * Math.PI * 54;
 const YOUTUBE_PLAYBACK_MODE_KEY = 'youtube_playback_mode'; // 'roku' or 'app'
 const PARENTAL_PIN_STORAGE_KEY = 'parental_pin';
@@ -564,6 +565,11 @@ function normalizeQuickLaunchItem(item) {
     // Auto-generate missing fields for quick launch items
     const normalized = { ...item };
 
+    // Default type to youtube when a videoId is present
+    if (!normalized.type && normalized.videoId) {
+        normalized.type = 'youtube';
+    }
+
     // Auto-generate id if not provided
     if (!normalized.id) {
         if (normalized.type === 'youtube' && normalized.videoId) {
@@ -572,11 +578,6 @@ function normalizeQuickLaunchItem(item) {
             // Fallback: generate from label or random
             normalized.id = normalized.label ? `ql-${normalized.label.toLowerCase().replace(/\s+/g, '-')}` : `ql-${Date.now()}`;
         }
-    }
-
-    // Auto-generate thumbnail for youtube if not provided
-    if (normalized.type === 'youtube' && normalized.videoId && !normalized.thumbnail) {
-        normalized.thumbnail = `https://img.youtube.com/vi/${normalized.videoId}/maxresdefault.jpg`;
     }
 
     // Default label to empty string
@@ -624,10 +625,10 @@ function applyToddlerContent(data) {
     const lightsTab = tabs.find(tab => tab.id === 'lights');
     const magicTab = tabs.find(tab => tab.id === 'magic');
 
-    const remoteButtons = Array.isArray(remoteTab?.buttons) ? [...remoteTab.buttons] : [];
-    const appsButtons = Array.isArray(appsTab?.buttons) ? [...appsTab.buttons] : [];
-    const lightsButtons = Array.isArray(lightsTab?.buttons) ? [...lightsTab.buttons] : [];
-    const magicButtons = Array.isArray(magicTab?.buttons) ? [...magicTab.buttons] : [];
+    const remoteButtons = filterEnabledButtons(remoteTab?.buttons);
+    const appsButtons = filterEnabledButtons(appsTab?.buttons);
+    const lightsButtons = filterEnabledButtons(lightsTab?.buttons);
+    const magicButtons = filterEnabledButtons(magicTab?.buttons);
 
     // Normalize quick launch items (auto-generate id, thumbnail, etc.)
     const rawQuickLaunch = Array.isArray(appsTab?.quickLaunch) ? appsTab.quickLaunch : [];
@@ -1189,19 +1190,83 @@ function mapQuickLaunchToToddlerButton(item) {
         id: item.id ? `${item.id}-button` : undefined,
         label: buttonLabel,
         thumbnail: item.thumbnail || '',
+        type: item.type || '',
+        videoId: item.videoId,
         launchItem: item
     };
 }
 
+function getThumbnailSources(config) {
+    const sources = [];
+    if (config.thumbnail) {
+        sources.push(config.thumbnail);
+    }
+
+    const rawId = config.videoId || config.launchItem?.videoId || '';
+    const isYoutube =
+        config.type === 'youtube' ||
+        config.launchItem?.type === 'youtube' ||
+        rawId.length > 0;
+    const videoId = rawId || (config.id && config.id.startsWith('yt-') ? config.id.slice(3) : '');
+
+    if (isYoutube && videoId) {
+        sources.push(
+            `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+            `https://i.ytimg.com/vi/${videoId}/hq720.jpg`,
+            `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
+            `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+            `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+            `https://i.ytimg.com/vi/${videoId}/0.jpg`,
+            `https://i.ytimg.com/vi/${videoId}/default.jpg`
+        );
+    }
+
+    // Final built-in placeholder to guarantee something shows
+    sources.push(
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 16 9" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%239c27b0"/><stop offset="1" stop-color="%236367f1"/></linearGradient></defs><rect width="16" height="9" fill="url(%23g)"/><text x="8" y="5" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="1.6" text-anchor="middle" dominant-baseline="middle">Video</text></svg>'
+    );
+
+    return sources.filter(Boolean);
+}
+
+function applyThumbnailWithFallback(img, sources) {
+    const list = Array.isArray(sources) ? sources.slice() : [];
+    list.push(FALLBACK_THUMB_PLACEHOLDER);
+
+    let index = 0;
+    const tryNext = () => {
+        if (index >= list.length) {
+            img.style.display = 'none';
+            return;
+        }
+        img.src = list[index++];
+    };
+
+    img.onerror = tryNext;
+    tryNext();
+}
+
+function filterEnabledButtons(buttons) {
+    if (!Array.isArray(buttons)) return [];
+    return buttons.filter(btn => btn.enabled !== false);
+}
+
 function createQuickButtonElement(config) {
     const isQuickLaunch = Boolean(config.launchItem);
-    const hasThumbnail = Boolean(config.thumbnail);
+    const hasThumbnail = Boolean(
+        config.thumbnail ||
+        (isQuickLaunch && (config.launchItem?.videoId || config.videoId))
+    );
 
     const buttonEl = document.createElement('button');
     buttonEl.type = 'button';
     buttonEl.className = hasThumbnail
         ? 'group relative overflow-hidden rounded-3xl shadow-xl transition hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-white/40 active:scale-[0.98] touch-manipulation select-none aspect-[16/9]'
         : 'flex min-h-[11rem] flex-col items-center justify-center gap-4 rounded-3xl bg-white text-indigo-600 shadow-xl transition hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-white/50 active:scale-95 touch-manipulation select-none';
+
+    if (hasThumbnail) {
+        buttonEl.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(147,51,234,0.35))';
+    }
 
     if (config.id) {
         buttonEl.id = config.id;
@@ -1223,7 +1288,8 @@ function createQuickButtonElement(config) {
 
     if (hasThumbnail) {
         const img = document.createElement('img');
-        img.src = config.thumbnail || '';
+        const thumbSources = getThumbnailSources(config);
+        applyThumbnailWithFallback(img, thumbSources);
         img.alt = config.label || 'Quick launch';
         img.loading = 'lazy';
         img.className = 'absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105';
@@ -1419,7 +1485,7 @@ function renderQuickLaunchSettings(items) {
 
     launches.forEach(item => {
         const button = document.createElement('button');
-        button.className = 'group relative overflow-hidden rounded-3xl shadow-lg transition hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-white/40 active:scale-[0.98] touch-manipulation select-none';
+        button.className = 'group relative overflow-hidden rounded-3xl shadow-lg transition hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-white/40 active:scale-[0.98] touch-manipulation select-none aspect-[16/9]';
         button.type = 'button';
 
         if (item.id) {
@@ -1429,10 +1495,12 @@ function renderQuickLaunchSettings(items) {
         button.addEventListener('click', () => handleQuickLaunch(item));
 
         const img = document.createElement('img');
-        img.src = item.thumbnail || '';
+        const thumbSources = getThumbnailSources({ ...item, launchItem: item });
+        button.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(147,51,234,0.35))';
+        applyThumbnailWithFallback(img, thumbSources);
         img.alt = item.label || 'Quick launch item';
         img.loading = 'lazy';
-        img.className = 'h-full w-full object-cover transition duration-300 group-hover:scale-105';
+        img.className = 'absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105';
 
         button.appendChild(img);
 
@@ -1447,11 +1515,8 @@ function renderQuickLaunchSettings(items) {
         grid.appendChild(button);
     });
 
-    if (settingsUnlocked) {
-        section.classList.remove('hidden');
-    } else {
-        section.classList.add('hidden');
-    }
+    // Always show quick launch when items exist
+    section.classList.remove('hidden');
 }
 
 function handleQuickLaunch(item) {

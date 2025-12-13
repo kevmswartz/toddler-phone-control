@@ -1,5 +1,6 @@
 # Build artifacts
 dist/
+passy.md
 
 # Tauri generated build output (keep final bundles)
 src-tauri/target/

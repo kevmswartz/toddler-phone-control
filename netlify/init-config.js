@@ -8,7 +8,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const NETLIFY_URL = 'https://toddler-phone-control.netlify.app';
+const NETLIFY_URL = 'https://toddler-roku.netlify.app';
 const DEFAULT_PASSPHRASE = 'blue mountain coffee morning sunshine';
 
 async function uploadConfig(configPath, passphrase) {

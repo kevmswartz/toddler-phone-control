@@ -51,6 +51,9 @@ if (Test-Path $RawExe) {
     }
 }
 
+Write-Host "Copying dist assets to Android..." -ForegroundColor Cyan
+& "$PWD\scripts\copy-assets-to-android.ps1"
+
 Write-Host "Building Android release (unsigned)..." -ForegroundColor Cyan
 [Environment]::SetEnvironmentVariable("TAURI_SKIP_VERSION_CHECK", "1", "Process")
 $targets = ($AndroidTargets -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
@@ -112,8 +115,18 @@ if (Test-Path $ApkOutput) {
     $NetlifyCopies += @{Name = (Split-Path $ApkOutput -Leaf); Type = "Android"; Size = (Get-Item $ApkDest).Length }
 }
 
-# Generate download page
+# Update index.html with build timestamp
 $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+$IndexPath = Join-Path (Join-Path $PWD "netlify\public") "index.html"
+if (Test-Path $IndexPath) {
+    $IndexContent = Get-Content $IndexPath -Raw
+    # Update both Android and Windows build dates
+    $IndexContent = $IndexContent -replace 'Built on: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', "Built on: $Timestamp"
+    $IndexContent | Out-File -FilePath $IndexPath -Encoding UTF8 -NoNewline
+    Write-Host "Updated index.html with build timestamp: $Timestamp" -ForegroundColor Cyan
+}
+
+# Generate download page
 $DownloadHtml = @"
 <!DOCTYPE html>
 <html lang="en">
@@ -144,6 +157,7 @@ foreach ($file in $NetlifyCopies) {
         <h3>$($file.Type) App</h3>
         <a href="/downloads/$($file.Name)" class="download-btn">⬇️ Download $($file.Name)</a>
         <div class="meta">
+            <span>Built on: $Timestamp</span><br/>
             <span class="file-size">Size: ${SizeMB} MB</span>
         </div>
     </div>

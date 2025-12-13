@@ -1087,7 +1087,7 @@ export default {
                  script-src 'self' 'unsafe-inline';
                  style-src 'self' 'unsafe-inline';
                  img-src 'self' data: https:;
-                 connect-src 'self' https://toddler-phone-control.netlify.app;">
+                 connect-src 'self' https://toddler-roku.netlify.app;">
   ```
   Note: `unsafe-inline` needed for current inline handlers. Remove after refactoring.
 
@@ -1322,7 +1322,7 @@ export default {
   ```bash
   # .env (gitignored)
   VITE_DEFAULT_ROKU_IP=192.168.1.100
-  VITE_NETLIFY_API_BASE=https://toddler-phone-control.netlify.app
+  VITE_NETLIFY_API_BASE=https://toddler-roku.netlify.app
   ```
 
   Access in code:

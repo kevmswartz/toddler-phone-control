@@ -208,15 +208,57 @@
             </a>
         </div>
 
+        <div class="features" style="margin-top: 30px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
+            <h2>📥 Download Latest Build</h2>
+            <ul>
+                <li>
+                    <strong>Android APK:</strong>
+                    <a href="/downloads/app-release-signed.apk" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                        Download for Android
+                    </a>
+                    <div id="android-built-on" style="color: #777; font-size: 12px; margin-top: 4px;">Built on: 2025-12-13 16:54:51</div>
+                </li>
+                <li>
+                    <strong>Windows Desktop:</strong>
+                    <a href="/downloads/roku-control.exe" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                        Download for Windows
+                    </a>
+                    <div id="windows-built-on" style="color: #777; font-size: 12px; margin-top: 4px;">Built on: 2025-12-13 16:54:51</div>
+                </li>
+            </ul>
+        </div>
+
         <div class="info">
             <h3>📡 API Endpoint</h3>
             <p>
-                Point your app to: <code>https://toddler-phone-control.netlify.app/api/config</code>
+                Point your app to: <code>https://toddler-roku.netlify.app/api/config</code>
             </p>
             <p style="margin-top: 10px;">
                 This will serve the latest configuration for your toddler-friendly buttons and content.
             </p>
         </div>
     </div>
+    <script>
+        // Try to fetch actual last-modified dates, but don't leave "checking..." if it fails
+        async function setBuiltOn(targetId, url) {
+            const el = document.getElementById(targetId);
+            if (!el) return;
+
+            try {
+                const res = await fetch(url, { method: 'HEAD' });
+                if (!res.ok) return; // Keep default date if fetch fails
+                const lastModified = res.headers.get('last-modified');
+                if (!lastModified) return; // Keep default date if no header
+                const formatted = new Date(lastModified).toLocaleString();
+                el.textContent = `Built on: ${formatted}`;
+            } catch (err) {
+                // Silently fail - default date will show
+                console.debug(`Could not fetch build date for ${url}:`, err);
+            }
+        }
+
+        setBuiltOn('android-built-on', '/downloads/app-release-signed.apk');
+        setBuiltOn('windows-built-on', '/downloads/roku-control.exe');
+    </script>
 </body>
 </html>

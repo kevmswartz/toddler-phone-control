@@ -1,1451 +1,421 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toddler Phone Control - Visual Editor</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e0e0e0;
-            overflow-x: auto;
-        }
-
-        .tab-button {
-            padding: 12px 20px;
-            border: none;
-            background: none;
-            color: #666;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-
-        .tab-button:hover {
-            color: #667eea;
-        }
-
-        .tab-button.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Input Groups */
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        textarea {
-            min-height: 100px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-            resize: vertical;
-        }
-
-        .help-text {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
-        }
-
-        /* Buttons */
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
-
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 12px;
-        }
-
-        /* Room Cards */
-        .room-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .room-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 20px;
-            background: #f9fafb;
-        }
-
-        .room-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .room-emoji {
-            font-size: 32px;
-        }
-
-        .room-info h3 {
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 4px;
-        }
-
-        .room-info .room-id {
-            font-size: 12px;
-            color: #888;
-            font-family: monospace;
-        }
-
-        .device-section {
-            margin-bottom: 20px;
-        }
-
-        .device-section h4 {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .device-list {
-            background: white;
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 60px;
-        }
-
-        .device-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background: #f3f4f6;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-
-        .device-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .device-info {
-            font-size: 13px;
-            font-family: monospace;
-            color: #374151;
-        }
-
-        .device-name {
-            font-weight: 600;
-            margin-right: 8px;
-        }
-
-        /* YouTube Item Cards */
-        .youtube-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .youtube-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            overflow: hidden;
-            background: white;
-            transition: transform 0.3s;
-        }
-
-        .youtube-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .youtube-thumbnail {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .youtube-thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .youtube-info {
-            padding: 15px;
-        }
-
-        .youtube-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .youtube-video-id {
-            font-size: 12px;
-            color: #888;
-            font-family: monospace;
-            margin-bottom: 12px;
-        }
-
-        .youtube-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        /* App Cards */
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .app-card {
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            overflow: hidden;
-            background: white;
-            transition: transform 0.3s;
-        }
-
-        .app-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .app-thumbnail {
-            width: 100%;
-            aspect-ratio: 1;
-            background: #f3f4f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-        }
-
-        .app-thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .app-info {
-            padding: 15px;
-        }
-
-        .app-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-            font-size: 14px;
-        }
-
-        .app-id {
-            font-size: 11px;
-            color: #888;
-            font-family: monospace;
-            margin-bottom: 12px;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 600px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .modal-header h2 {
-            font-size: 20px;
-            color: #333;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-close:hover {
-            color: #333;
-            transform: none;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        /* Message */
-        .message {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: none;
-        }
-
-        .message.show {
-            display: block;
-        }
-
-        .message.success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #10b981;
-        }
-
-        .message.error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #ef4444;
-        }
-
-        .message.info {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #3b82f6;
-        }
-
-        /* Config Section */
-        .config-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .add-button {
-            background: #10b981;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toddler Roku Config Editor</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #111827;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    h1 { margin: 0 0 8px; font-size: 26px; }
+    .subtitle { margin: 0 0 20px; color: #4b5563; font-size: 14px; }
+    .input-group { margin-bottom: 18px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: #374151; }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus { outline: none; border-color: #667eea; }
+    textarea { min-height: 240px; font-family: 'Menlo','Consolas',monospace; }
+    .button-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-ghost { background: #f3f4f6; color: #111827; }
+    .message { padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; display: none; font-weight: 600; }
+    .message.show { display: block; }
+    .message.success { background: #ecfdf3; color: #065f46; border: 1px solid #a7f3d0; }
+    .message.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .message.info { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; }
+    .tab-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0; }
+    .tab-button { padding: 10px 14px; border-radius: 10px; border: 2px solid #e5e7eb; background: #f9fafb; font-weight: 700; cursor: pointer; }
+    .tab-button.active { background: #eef2ff; border-color: #6366f1; color: #4338ca; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 18px; background: #f9fafb; }
+    .quick-item { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-weight: 600; font-size: 12px; }
+    .list { display: grid; gap: 10px; }
+    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 20; }
+    .modal.show { display: flex; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(17, 24, 39, 0.55); backdrop-filter: blur(2px); }
+    .modal-card { position: relative; background: #fff; border-radius: 14px; padding: 18px; width: min(520px, 90vw); box-shadow: 0 20px 50px rgba(0,0,0,0.25); z-index: 1; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; }
+    .toggle-row strong { font-size: 14px; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #d1d5db; transition: .2s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background: white; transition: .2s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+    input:checked + .slider { background: #6366f1; }
+    input:checked + .slider:before { transform: translateX(18px); }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>🎮 Visual Config Editor</h1>
-        <p class="subtitle">Manage your Toddler Phone Control configuration with visual forms</p>
+  <div class="container">
+    <h1>🎮 Toddler Roku Config Editor</h1>
+    <p class="subtitle">Load and save your cloud app-config (Roku only).</p>
 
+    <div class="input-group">
+      <label for="passphrase">Passphrase (5+ words)</label>
+      <input type="text" id="passphrase" placeholder="e.g., cozy bright family movie night" autocomplete="off">
+      <div class="subtitle" style="margin-top:6px;">Used to load/save your config from Netlify.</div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn-primary" id="loadBtn">📥 Load Config</button>
+      <button class="btn-success" id="saveBtn">💾 Save Config</button>
+      <button class="btn-ghost" id="formatBtn">🧹 Format JSON</button>
+    </div>
+
+    <div class="message" id="status"></div>
+
+    <nav class="tab-nav">
+      <button class="tab-button active" data-tab="settings">⚙️ App Settings</button>
+      <button class="tab-button" data-tab="youtube">📺 Quick Launch</button>
+      <button class="tab-button" data-tab="apps">🎬 App Buttons</button>
+      <button class="tab-button" data-tab="json">📝 Raw JSON</button>
+    </nav>
+
+    <div id="settings-tab" class="tab-content active">
+      <div class="card">
         <div class="input-group">
-            <label for="passphrase">Passphrase (5+ words)</label>
-            <input type="text" id="passphrase" placeholder="e.g., my awesome roku button setup" autocomplete="off">
-            <div class="help-text">Enter at least 5 words separated by spaces to load/save your config.</div>
+          <label for="parentalPinEditor">Parental PIN</label>
+          <input type="text" id="parentalPinEditor" maxlength="8" inputmode="numeric" placeholder="1234">
+          <div class="subtitle" style="margin-top:6px;">Optional override for grown-up settings in the app.</div>
         </div>
-
-        <div class="button-group" style="margin-bottom: 30px;">
-            <button class="btn-primary" onclick="loadAllConfigs()">
-                <span id="loadText">📥 Load Configs</span>
-            </button>
-            <button class="btn-success" onclick="saveAllConfigs()">
-                <span id="saveText">💾 Save All to Cloud</span>
-            </button>
-        </div>
-
-        <div class="message" id="globalMessage"></div>
-
-        <nav class="tab-nav">
-            <button class="tab-button active" data-tab="rooms">🏠 Rooms & BLE Detection</button>
-            <button class="tab-button" data-tab="app-settings">⚙️ App Settings</button>
-            <button class="tab-button" data-tab="device-lists">📡 Device Lists</button>
-            <button class="tab-button" data-tab="youtube">📺 YouTube Quick Launch</button>
-            <button class="tab-button" data-tab="apps">🎬 App Buttons</button>
-
-            <button class="tab-button" data-tab="json">⚙️ Raw JSON</button>
-        </nav>
-
-        <!-- Rooms Tab -->
-        <div class="tab-content active" id="rooms-tab">
-            <div class="config-header">
-                <h2>Room BLE Detection</h2>
-                <button class="add-button" onclick="addRoom()">
-                    ➕ Add Room
-                </button>
-            </div>
-            <div id="roomsContainer" class="room-grid"></div>
-        </div>
-
-        <!-- App Settings Tab -->
-        <div class="tab-content" id="app-settings-tab">
-            <div class="config-header">
-                <h2>App Settings</h2>
-                <p style="color: #666; font-size: 14px; margin-top: 10px;">Manage secure values that the toddler app
-                    reads directly from your Netlify config.</p>
-            </div>
-
-
-
-            <div class="input-group">
-                <label for="parentalPinEditor">Parental PIN (4 digits)</label>
-                <input type="text" id="parentalPinEditor" maxlength="4" inputmode="numeric" pattern="[0-9]*"
-                    placeholder="1234">
-                <div class="help-text">
-                    Leave blank to fall back to the default (1234). Numbers only—this controls the in-app settings lock.
-                </div>
-            </div>
-
-            <div id="appSettingsStatus" class="rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-900"
-                style="background: #f5f5f5;">
-                App settings will appear here after loading your config.
-            </div>
-        </div>
-
-        <!-- Device Lists Tab -->
-        <div class="tab-content" id="device-lists-tab">
-            <div class="config-header">
-                <h2>Saved Device Lists</h2>
-                <p style="color: #666; font-size: 14px; margin-top: 10px;">View your saved Bluetooth and Govee device
-                    scans. Use these to configure room BLE beacons.</p>
-            </div>
-
-            <div style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 15px;">📱 Bluetooth LE Devices</h3>
-                <button class="btn-primary" onclick="loadBLEDeviceList()" style="margin-bottom: 15px;">🔄 Load BLE Scan
-                    Results</button>
-                <div id="bleDevicesList"
-                    style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 100px;">
-                    <p style="color: #999;">Click "Load BLE Scan Results" to view saved Bluetooth device scans from your
-                        app.</p>
-                </div>
-            </div>
-
-
-        </div>
-
-        <!-- YouTube Tab -->
-        <div class="tab-content" id="youtube-tab">
-            <div class="config-header">
-                <h2>YouTube Quick Launch Videos</h2>
-                <button class="add-button" onclick="addYouTubeVideo()">
-                    ➕ Add Video
-                </button>
-            </div>
-            <div id="youtubeContainer" class="youtube-grid"></div>
-        </div>
-
-        <!-- Apps Tab -->
-        <div class="tab-content" id="apps-tab">
-            <div class="config-header">
-                <h2>App Buttons</h2>
-                <button class="add-button" onclick="addAppButton()">
-                    ➕ Add App
-                </button>
-            </div>
-            <div id="appsContainer" class="app-grid"></div>
-        </div>
-
-
-
-        <!-- JSON Tab -->
-        <div class="tab-content" id="json-tab">
-            <div class="input-group">
-                <label>App Config JSON</label>
-                <textarea id="appConfigJson" placeholder="Load configs to edit raw JSON..."></textarea>
-            </div>
-            <div class="input-group">
-                <label>Rooms Config JSON</label>
-                <textarea id="roomsConfigJson" placeholder="Load configs to edit raw JSON..."></textarea>
-            </div>
-        </div>
+        <div class="pill" id="appSettingsStatus">Settings not loaded.</div>
+      </div>
     </div>
 
-    <!-- Room Edit Modal -->
-    <div class="modal" id="roomModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="roomModalTitle">Edit Room</h2>
-                <button class="modal-close" onclick="closeRoomModal()">×</button>
-            </div>
-            <div class="input-group">
-                <label>Room Name</label>
-                <input type="text" id="roomName" placeholder="e.g., Living Room">
-            </div>
-            <div class="input-group">
-                <label>Emoji</label>
-                <input type="text" id="roomEmoji" placeholder="🛋️" maxlength="2">
-            </div>
-            <div class="input-group">
-                <label>Room ID (lowercase, no spaces)</label>
-                <input type="text" id="roomId" placeholder="living_room">
-            </div>
-
-            <h4 style="margin-top: 20px; margin-bottom: 10px;">📡 BLE Beacons for Room Detection</h4>
-            <p style="color: #666; font-size: 12px; margin-bottom: 10px;">Add Bluetooth devices that will be used to
-                detect when you're in this room.</p>
-            <div id="roomBeacons"></div>
-            <button class="btn-secondary btn-sm" onclick="addBeacon()" style="margin-bottom: 20px;">+ Add BLE
-                Beacon</button>
-
-            <div class="modal-actions">
-                <button class="btn-success" onclick="saveRoom()">Save Room</button>
-                <button class="btn-danger" onclick="deleteRoom()">Delete Room</button>
-                <button class="btn-secondary" onclick="closeRoomModal()">Cancel</button>
-            </div>
+    <div id="youtube-tab" class="tab-content">
+      <div class="card">
+        <div class="button-row" style="margin-bottom:10px;">
+          <button class="btn-ghost" id="addVideoBtn">➕ Add Video</button>
         </div>
+        <div id="quickLaunchList" class="list"></div>
+      </div>
     </div>
 
-    <!-- YouTube Edit Modal -->
-    <div class="modal" id="youtubeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="youtubeModalTitle">Add YouTube Video</h2>
-                <button class="modal-close" onclick="closeYouTubeModal()">×</button>
-            </div>
-            <div class="input-group">
-                <label>YouTube URL or Video ID</label>
-                <input type="text" id="youtubeUrl" placeholder="https://youtube.com/watch?v=... or just the video ID">
-                <div class="help-text">Paste a full YouTube URL or just the video ID (e.g., XqZsoesa55w)</div>
-            </div>
-            <div class="input-group">
-                <label>Label</label>
-                <input type="text" id="youtubeLabel" placeholder="e.g., Baby Shark">
-            </div>
-            <div class="modal-actions">
-                <button class="btn-success" onclick="saveYouTubeVideo()">Save Video</button>
-                <button class="btn-secondary" onclick="closeYouTubeModal()">Cancel</button>
-            </div>
-        </div>
+    <div id="apps-tab" class="tab-content">
+      <div class="card">
+        <div class="subtitle" style="margin-bottom:10px;">Buttons currently included in the app-config.</div>
+        <div id="appButtonsList" class="list"></div>
+      </div>
     </div>
 
-    <!-- App Edit Modal -->
-    <div class="modal" id="appModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="appModalTitle">Add App Button</h2>
-                <button class="modal-close" onclick="closeAppModal()">×</button>
-            </div>
-            <div class="input-group">
-                <label>App Name</label>
-                <input type="text" id="appName" placeholder="e.g., Disney+">
-            </div>
-            <div class="input-group">
-                <label>App ID (Roku Channel ID)</label>
-                <input type="text" id="appId" placeholder="e.g., 291097">
-                <div class="help-text">Find Roku app IDs at channelstore.roku.com</div>
-            </div>
-            <div class="input-group">
-                <label>Emoji</label>
-                <input type="text" id="appEmoji" placeholder="🧚" maxlength="2">
-            </div>
-            <div class="input-group">
-                <label>Label (optional)</label>
-                <input type="text" id="appLabel" placeholder="Disney+">
-            </div>
-            <div class="input-group">
-                <label>Thumbnail URL (optional)</label>
-                <input type="text" id="appThumbnail" placeholder="https://...">
-            </div>
-            <div class="modal-actions">
-                <button class="btn-success" onclick="saveAppButton()">Save App</button>
-                <button class="btn-secondary" onclick="closeAppModal()">Cancel</button>
-            </div>
-        </div>
+    <div id="json-tab" class="tab-content">
+      <div class="card">
+        <label for="appConfigJson">app-config.json</label>
+        <textarea id="appConfigJson" spellcheck="false"></textarea>
+      </div>
     </div>
-    <script>
-        const API_BASE_URL = '/api/config';
-        let appConfig = null;
-        let roomsConfig = null;
-        let currentEditingRoomIndex = -1;
-        let currentEditingYouTubeIndex = -1;
-        let currentEditingAppIndex = -1;
+  </div>
 
+  <div class="modal" id="videoModal">
+    <div class="modal-backdrop"></div>
+    <form class="modal-card" id="videoForm">
+      <h3 style="margin-top:0; margin-bottom:10px; font-size:18px;">Add YouTube Video</h3>
+      <div class="input-group">
+        <label for="videoLabelInput">Label</label>
+        <input type="text" id="videoLabelInput" placeholder="Bluey Theme" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label for="videoIdInput">YouTube Video ID</label>
+        <input type="text" id="videoIdInput" placeholder="JXOTmWl5t3A" autocomplete="off" required>
+      </div>
+      <div class="button-row" style="justify-content:flex-end; margin-bottom:0;">
+        <button type="button" class="btn-ghost" id="cancelVideoBtn">Cancel</button>
+        <button type="submit" class="btn-primary">Add Video</button>
+      </div>
+    </form>
+  </div>
 
-        // Device Registry Functions
-        const DEVICE_REGISTRY_KEY = 'device_registry';
+  <script>
+    const API_BASE_URL = 'https://toddler-roku.netlify.app/api/config';
+    const STORAGE_KEY = 'roku_editor_passphrase';
+    let appConfig = { tabs: [], settings: {} };
 
+    function setStatus(text, type = 'info') {
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.className = `message ${type} show`;
+    }
 
+    function getPassphrase() {
+      const value = document.getElementById('passphrase').value.trim();
+      if (!value) { setStatus('Enter a passphrase.', 'error'); return null; }
+      const words = value.split(/\s+/);
+      if (words.length < 5) { setStatus('Passphrase must be at least 5 words.', 'error'); return null; }
+      return value;
+    }
 
+    function ensureStructure() {
+      if (!appConfig || typeof appConfig !== 'object') appConfig = {};
+      if (!Array.isArray(appConfig.tabs)) appConfig.tabs = [];
+      if (!appConfig.settings || typeof appConfig.settings !== 'object') appConfig.settings = {};
+    }
 
-        // Tab switching
-        document.querySelectorAll('.tab-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const tabId = button.dataset.tab;
-                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                button.classList.add('active');
-                document.getElementById(`${tabId}-tab`).classList.add('active');
-            });
+    function getAppsTab() {
+      ensureStructure();
+      let tab = appConfig.tabs.find(t => t.id === 'apps');
+      if (!tab) {
+        tab = { id: 'apps', label: 'Roku', icon: '📺', quickLaunch: [], buttons: [] };
+        appConfig.tabs.push(tab);
+      }
+      if (!Array.isArray(tab.quickLaunch)) tab.quickLaunch = [];
+      if (!Array.isArray(tab.buttons)) tab.buttons = [];
+      return tab;
+    }
+
+    function syncJsonTextarea() {
+      const textarea = document.getElementById('appConfigJson');
+      textarea.value = JSON.stringify(appConfig, null, 2);
+    }
+
+    function renderAppSettings() {
+      ensureStructure();
+      const input = document.getElementById('parentalPinEditor');
+      input.value = appConfig.settings.parentalPin || '';
+      const status = document.getElementById('appSettingsStatus');
+      const pin = (appConfig.settings.parentalPin || '').trim();
+      status.textContent = pin ? `Parental PIN set (${pin.length} digits).` : 'Parental PIN will fall back to 1234.';
+    }
+
+    function renderQuickLaunch() {
+      const list = document.getElementById('quickLaunchList');
+      const quickLaunch = getAppsTab().quickLaunch;
+      list.innerHTML = '';
+      if (!quickLaunch.length) {
+        const empty = document.createElement('div');
+        empty.className = 'subtitle';
+        empty.textContent = 'No YouTube videos yet. Add one to get started.';
+        list.appendChild(empty);
+        return;
+      }
+      quickLaunch.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'quick-item';
+
+        const labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.placeholder = 'Label';
+        labelInput.value = item.label || '';
+        labelInput.addEventListener('input', () => { item.label = labelInput.value; syncJsonTextarea(); });
+
+        const idInput = document.createElement('input');
+        idInput.type = 'text';
+        idInput.placeholder = 'YouTube video ID';
+        idInput.value = item.videoId || '';
+        idInput.addEventListener('input', () => { item.videoId = idInput.value; syncJsonTextarea(); });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-ghost';
+        removeBtn.textContent = '🗑️';
+        removeBtn.addEventListener('click', () => {
+          quickLaunch.splice(index, 1);
+          renderAll();
         });
 
-        function showMessage(text, type = 'info') {
-            const messageDiv = document.getElementById('globalMessage');
-            messageDiv.textContent = text;
-            messageDiv.className = `message ${type} show`;
-            setTimeout(() => {
-                messageDiv.classList.remove('show');
-            }, 5000);
+        row.appendChild(labelInput);
+        row.appendChild(idInput);
+        row.appendChild(removeBtn);
+        list.appendChild(row);
+      });
+    }
+
+    function renderAppButtons() {
+      const list = document.getElementById('appButtonsList');
+      list.innerHTML = '';
+      ensureStructure();
+      const buttons = appConfig.tabs.flatMap(tab => (Array.isArray(tab.buttons) ? tab.buttons : []).map(btn => ({ tabId: tab.id, ...btn })));
+      if (!buttons.length) {
+        const empty = document.createElement('div');
+        empty.className = 'subtitle';
+        empty.textContent = 'No app buttons found in config.';
+        list.appendChild(empty);
+        return;
+      }
+      buttons.forEach(btn => {
+        const row = document.createElement('div');
+        row.className = 'toggle-row';
+
+        const label = document.createElement('div');
+        label.innerHTML = `<strong>${btn.emoji || ''} ${btn.label || btn.appName || 'Untitled'}</strong><br><span style="font-size:12px;color:#6b7280;">Tab: ${btn.tabId}</span>`;
+
+        const toggleWrap = document.createElement('label');
+        toggleWrap.className = 'switch';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = btn.enabled !== false;
+        const slider = document.createElement('span');
+        slider.className = 'slider';
+        toggleWrap.appendChild(input);
+        toggleWrap.appendChild(slider);
+
+        input.addEventListener('change', () => {
+          btn.enabled = input.checked;
+          syncJsonTextarea();
+          setStatus(input.checked ? 'Enabled button.' : 'Disabled button.', 'info');
+        });
+
+        row.appendChild(label);
+        row.appendChild(toggleWrap);
+        list.appendChild(row);
+      });
+    }
+
+    function renderAll() {
+      renderAppSettings();
+      renderQuickLaunch();
+      renderAppButtons();
+      syncJsonTextarea();
+    }
+
+    function syncFromInputs() {
+      ensureStructure();
+      const pinInput = document.getElementById('parentalPinEditor');
+      appConfig.settings.parentalPin = (pinInput.value || '').trim();
+    }
+
+    async function loadConfig() {
+      const passphrase = getPassphrase();
+      if (!passphrase) return;
+      setStatus('Loading from cloud...', 'info');
+      try {
+        const resp = await fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=app-config&_t=${Date.now()}`, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        appConfig = await resp.json();
+        ensureStructure();
+        renderAll();
+        localStorage.setItem(STORAGE_KEY, passphrase);
+        setStatus('Loaded config from cloud.', 'success');
+      } catch (err) {
+        setStatus(`Failed to load: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    async function saveConfig() {
+      const passphrase = getPassphrase();
+      if (!passphrase) return;
+      setStatus('Saving to cloud...', 'info');
+      try {
+        syncFromInputs();
+        try {
+          const parsed = JSON.parse(document.getElementById('appConfigJson').value);
+          appConfig = parsed;
+          ensureStructure();
+        } catch (err) {
+          setStatus(`Invalid JSON: ${err.message}`, 'error');
+          return;
         }
-
-        function getPassphrase() {
-            const passphrase = document.getElementById('passphrase').value.trim();
-            if (!passphrase) {
-                showMessage('Please enter a passphrase', 'error');
-                return null;
-            }
-            const words = passphrase.split(/\s+/);
-            if (words.length < 5) {
-                showMessage(`Passphrase must be at least 5 words (you have
-                    ${words.length})`, 'error'); return null;
-            } return passphrase;
-        } async function loadAllConfigs() {
-            const passphrase = getPassphrase(); if (!passphrase) return; try {
-                const [appResponse,
-                    roomsResponse] = await Promise.all([
-                        fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=app-config&_t=${Date.now()}`,
-                            { cache: 'no-store' }),
-                        fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=rooms&_t=${Date.now()}`, {
-                            cache: 'no-store'
-                        })]); if (!appResponse.ok || !roomsResponse.ok) {
-                            throw new Error('Failed to load
-                    configs'); } appConfig=await appResponse.json(); roomsConfig=await roomsResponse.json();
-                    renderAllViews(); showMessage('✅ Configs loaded successfully!', 'success');
-                        } catch (error) {
-                            showMessage(`❌ Failed to load: ${error.message}`, 'error'); console.error(error);
-                        }
-            } async
-            function saveAllConfigs() {
-                const passphrase = getPassphrase(); if (!passphrase) return; // Sync JSON
-                    changes back to objects try {
-                    const
-                    appJsonText = document.getElementById('appConfigJson').value.trim(); const
-                        roomsJsonText = document.getElementById('roomsConfigJson').value.trim(); if (appJsonText)
-                        appConfig = JSON.parse(appJsonText); if (roomsJsonText) roomsConfig = JSON.parse(roomsJsonText);
-                } catch
-                (error) { showMessage(`❌ Invalid JSON: ${error.message}`, 'error'); return; } try {
-                    const
-                    [appResponse, roomsResponse] = await Promise.all([fetch(`${API_BASE_URL}?type=app-config`, {
-                        method: 'POST', headers: {
-                            'Content-Type': 'application/json', 'Authorization': `Bearer
-                    ${passphrase}`
-                        }, body: JSON.stringify(appConfig)
-                    }), fetch(`${API_BASE_URL}?type=rooms`, {
-                        method: 'POST', headers: {
-                            'Content-Type': 'application/json', 'Authorization': `Bearer
-                    ${passphrase}`
-                        }, body: JSON.stringify(roomsConfig)
-                    })]); if (!appResponse.ok || !roomsResponse.ok) { throw new Error('Failed to save configs'); } showMessage('✅ All configs saved to
-                    cloud!', 'success' ); } catch (error) { showMessage(`❌ Failed to save: ${error.message}`, 'error' );
-                    console.error(error);
-                } } function ensureAppConfigStructure() {
-                    if (!appConfig || typeof appConfig
-                        !== 'object') { appConfig = { tabs: [] }; } if (!Array.isArray(appConfig.tabs)) { appConfig.tabs = []; }
-                    if (!appConfig.settings || typeof appConfig.settings !== 'object') { appConfig.settings = {}; } if
-                        (typeof appConfig.settings.parentalPin !== 'string') { appConfig.settings.parentalPin = ''; }
-                }
-            function getAppSettings() { ensureAppConfigStructure(); return appConfig.settings; } function
-                syncAppConfigJson() {
-                    const textarea = document.getElementById('appConfigJson'); if (textarea &&
-                        appConfig) { textarea.value = JSON.stringify(appConfig, null, 2); }
-            } function
-                updateAppSettingsStatus() {
-                    const statusEl = document.getElementById('appSettingsStatus'); if
-                        (!statusEl) return; const settings = getAppSettings(); const pin = (settings.parentalPin || '').trim();
-                const maskedPin = pin ? '•'.repeat(pin.length) : 'Default'; const lines = []; lines.push(pin ?
-                    `Parental PIN set to ${maskedPin}.` : 'Parental PIN will fall back to 1234.');
-                lines.push('Click "Save All Configs" to push updates.'); statusEl.textContent = lines.join(' ');
-            }
-
-            function renderAppSettings() {
-                ensureAppConfigStructure();
-                const settings = appConfig.settings;
-                const pinInput = document.getElementById(' parentalPinEditor'); if (pinInput && pinInput
-                    !== document.activeElement) { pinInput.value = settings.parentalPin || ''; }
-                updateAppSettingsStatus();
-            } function updateAppSettingsFromInputs() {
-                if (!appConfig) return; const
-                    settings = getAppSettings(); const pinInput = document.getElementById('parentalPinEditor'); if
-                    (pinInput) {
-                        let digits = pinInput.value.replace(/\D/g, '').slice(0, 4); if (pinInput.value
-                            !== digits) { pinInput.value = digits; } settings.parentalPin = digits;
-                } syncAppConfigJson();
-                updateAppSettingsStatus();
-            } function renderAllViews() {
-                ensureAppConfigStructure(); renderRooms();
-                renderYouTubeVideos(); renderAppButtons(); renderAppSettings();
-                document.getElementById('appConfigJson').value = JSON.stringify(appConfig, null, 2);
-                document.getElementById('roomsConfigJson').value = JSON.stringify(roomsConfig, null, 2);
-            }
-            //=====ROOMS=====function renderRooms() { const container=document.getElementById('roomsContainer');
-            if (!roomsConfig || !roomsConfig.rooms || roomsConfig.rooms.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No rooms configured. Click "Add Room" to get started.</p></div>'
-                    ; return;
-            } container.innerHTML = roomsConfig.rooms.map((room, index) => `
-                    <div class="room-card">
-                        <div class="room-header">
-                            <div class="room-emoji">${room.emoji || '🏠'}</div>
-                            <div class="room-info">
-                                <h3>${room.name}</h3>
-                                <div class="room-id">${room.id}</div>
-                            </div>
-                        </div>
-                        <div class="device-section">
-                            <h4>📡 BLE Beacons (${room.beacons?.length || 0})</h4>
-                            <div class="device-list">
-                                ${room.beacons?.length > 0 ? room.beacons.map(beacon => `
-                                <div class="device-item">
-                                    <div class="device-info">
-                                        <span class="device-name">${beacon.name || 'Unnamed'}</span>
-                                        <span style="font-size: 11px; color: #666;">${beacon.address} • RSSI:
-                                            ${beacon.rssiThreshold}dB</span>
-                                    </div>
-                                </div>
-                                `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No BLE
-                                    beacons configured</div > '}
-                            </div >
-                        </div >
-                <button class="btn-primary btn-sm" style="width: 100%; margin-top: 10px;"
-                    onclick="editRoom(${index})">
-                    ✏️ Edit Room
-                </button>
-                    </div >
-                `).join('');
-                    }
-
-                    function addRoom() {
-                    currentEditingRoomIndex = -1;
-                    document.getElementById('roomModalTitle').textContent = 'Add New Room';
-                    document.getElementById('roomName').value = '';
-                    document.getElementById('roomEmoji').value = '🏠';
-                    document.getElementById('roomId').value = '';
-                    document.getElementById('roomBeacons').innerHTML = '';
-                    document.getElementById('roomModal').classList.add('show');
-                    }
-
-                    function editRoom(index) {
-                    currentEditingRoomIndex = index;
-                    const room = roomsConfig.rooms[index];
-                    document.getElementById('roomModalTitle').textContent = 'Edit Room';
-                    document.getElementById('roomName').value = room.name;
-                    document.getElementById('roomEmoji').value = room.emoji || '🏠';
-                    document.getElementById('roomId').value = room.id;
-
-                    // Render beacon inputs
-                    const beaconsContainer = document.getElementById('roomBeacons');
-                    beaconsContainer.innerHTML = (room.beacons || []).map((beacon, i) => `
-                < div class= "input-group"
-                        style = "background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;" >
-                        <div style="margin-bottom: 12px;">
-                            <label
-                                style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Device
-                                Name</label>
-                            <input type="text" placeholder="e.g., Living Room TV" value="${beacon.name || ''}"
-                                data-beacon-index="${i}" data-field="name">
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <label
-                                style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">BLE
-                                Address (MAC)</label>
-                            <input type="text" placeholder="AA:BB:CC:DD:EE:FF" value="${beacon.address || ''}"
-                                data-beacon-index="${i}" data-field="address">
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <label
-                                style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Type</label>
-                            <input type="text" placeholder="ble" value="${beacon.type || 'ble'}"
-                                data-beacon-index="${i}" data-field="type">
-                            <div style="font-size: 11px; color: #888; margin-top: 4px;">Usually "ble" for Bluetooth Low
-                                Energy</div>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <label
-                                style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Expected
-                                RSSI (Signal Strength)</label>
-                            <input type="number" placeholder="-50" value="${beacon.expectedRssi || -50}"
-                                data-beacon-index="${i}" data-field="expectedRssi">
-                            <div style="font-size: 11px; color: #888; margin-top: 4px;">Typical signal strength when
-                                you're in this room (e.g., -50)</div>
-                        </div>
-                        <div style="margin-bottom: 12px;">
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">RSSI
-                                Threshold (Minimum Signal)</label>
-                            <input type="number" placeholder="-70" value="${beacon.rssiThreshold || -70}"
-                                data-beacon-index="${i}" data-field="rssiThreshold">
-                            <div style="font-size: 11px; color: #888; margin-top: 4px;">Minimum signal to consider
-                                you're in this room (e.g., -70)</div>
-                        </div>
-                        <button class="btn-danger btn-sm" onclick="removeBeacon(${i})" style="margin-top: 8px;">Remove
-                            Beacon</button>
-                    </div >
-                `).join('');
-
-                    document.getElementById('roomModal').classList.add('show');
-                    }
-
-                    function addBeacon() {
-                    const container = document.getElementById('roomBeacons');
-                    const index = container.children.length;
-                    const div = document.createElement('div');
-                    div.className = 'input-group';
-                    div.style.cssText = 'background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;
-                    border: 1px solid #e0e0e0;';
-                    div.innerHTML = `
-                < div style = "margin-bottom: 12px;" >
-                        <label
-                            style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Device
-                            Name</label>
-                        <input type="text" placeholder="e.g., Living Room TV" data-beacon-index="${index}"
-                            data-field="name">
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <label
-                            style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">BLE
-                            Address (MAC)</label>
-                        <input type="text" placeholder="AA:BB:CC:DD:EE:FF" data-beacon-index="${index}"
-                            data-field="address">
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <label
-                            style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Type</label>
-                        <input type="text" placeholder="ble" value="ble" data-beacon-index="${index}" data-field="type">
-                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Usually "ble" for Bluetooth Low
-                            Energy</div>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Expected
-                            RSSI (Signal Strength)</label>
-                        <input type="number" placeholder="-50" value="-50" data-beacon-index="${index}"
-                            data-field="expectedRssi">
-                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Typical signal strength when you're
-                            in this room (e.g., -50)</div>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">RSSI
-                            Threshold (Minimum Signal)</label>
-                        <input type="number" placeholder="-70" value="-70" data-beacon-index="${index}"
-                            data-field="rssiThreshold">
-                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Minimum signal to consider you're in
-                            this room (e.g., -70)</div>
-                    </div>
-                    <button class="btn-danger btn-sm" onclick="removeBeacon(${index})" style="margin-top: 8px;">Remove
-                        Beacon</button>
-                    `;
-                    container.appendChild(div);
-                    }
-
-                    function removeBeacon(index) {
-                    const container = document.getElementById('roomBeacons');
-                    container.children[index].remove();
-                    }
-
-                    function saveRoom() {
-                    const name = document.getElementById('roomName').value.trim();
-                    const emoji = document.getElementById('roomEmoji').value.trim();
-                    const id = document.getElementById('roomId').value.trim();
-
-                    if (!name || !id) {
-                    showMessage('Room name and ID are required', 'error');
-                    return;
-                    }
-
-                    // Collect BLE beacons
-                    const beacons = Array.from(document.querySelectorAll('[data-beacon-index]'))
-                    .reduce((acc, input) => {
-                    const index = parseInt(input.dataset.beaconIndex);
-                    const field = input.dataset.field;
-                    if (!acc[index]) acc[index] = {};
-                    acc[index][field] = input.value.trim();
-                    return acc;
-                    }, [])
-                    .filter(beacon => beacon.address)
-                    .map(beacon => ({
-                    type: beacon.type || 'ble',
-                    name: beacon.name || 'Unnamed',
-                    address: beacon.address,
-                    expectedRssi: parseInt(beacon.expectedRssi) || -50,
-                    rssiThreshold: parseInt(beacon.rssiThreshold) || -70
-                    }));
-
-                    const room = {
-                    id,
-                    name,
-                    emoji,
-                    beacons
-                    };
-
-                    if (currentEditingRoomIndex >= 0) {
-                    roomsConfig.rooms[currentEditingRoomIndex] = room;
-                    } else {
-                    roomsConfig.rooms.push(room);
-                    }
-
-                    renderAllViews();
-                    closeRoomModal();
-                    showMessage('✅ Room saved! Remember to click "Save All to Cloud"', 'success');
-                    }
-
-                    function deleteRoom() {
-                    if (currentEditingRoomIndex >= 0) {
-                    if (confirm('Are you sure you want to delete this room?')) {
-                    roomsConfig.rooms.splice(currentEditingRoomIndex, 1);
-                    renderAllViews();
-                    closeRoomModal();
-                    showMessage('✅ Room deleted! Remember to click "Save All to Cloud"', 'success');
-                    }
-                    }
-                    }
-
-                    function closeRoomModal() {
-                    document.getElementById('roomModal').classList.remove('show');
-                    }
-
-                    // ===== YOUTUBE =====
-                    function renderYouTubeVideos() {
-                    const container = document.getElementById('youtubeContainer');
-                    const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
-                    const videos = appsTab?.quickLaunch || [];
-
-                    if (videos.length === 0) {
-                    container.innerHTML = '<div class="empty-state">
-                        <div class="empty-state-icon">📺</div>
-                        <p>No YouTube videos configured. Click "Add Video" to get started.</p>
-                    </div>';
-                    return;
-                    }
-
-                    container.innerHTML = videos.map((video, index) => `
-                < div class= "youtube-card" >
-                        <div class="youtube-thumbnail">
-                            <img src="https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg" alt="${video.label}">
-                        </div>
-                        <div class="youtube-info">
-                            <div class="youtube-label">${video.label}</div>
-                            <div class="youtube-video-id">${video.videoId}</div>
-                            <div class="youtube-actions">
-                                <button class="btn-primary btn-sm" onclick="editYouTubeVideo(${index})">Edit</button>
-                                <button class="btn-danger btn-sm" onclick="deleteYouTubeVideo(${index})">Delete</button>
-                            </div>
-                        </div>
-                    </div >
-                `).join('');
-                    }
-
-                    function addYouTubeVideo() {
-                    currentEditingYouTubeIndex = -1;
-                    document.getElementById('youtubeModalTitle').textContent = 'Add YouTube Video';
-                    document.getElementById('youtubeUrl').value = '';
-                    document.getElementById('youtubeLabel').value = '';
-                    document.getElementById('youtubeModal').classList.add('show');
-                    }
-
-                    function editYouTubeVideo(index) {
-                    currentEditingYouTubeIndex = index;
-                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                    const video = appsTab.quickLaunch[index];
-                    document.getElementById('youtubeModalTitle').textContent = 'Edit YouTube Video';
-                    document.getElementById('youtubeUrl').value = video.videoId;
-                    document.getElementById('youtubeLabel').value = video.label;
-                    document.getElementById('youtubeModal').classList.add('show');
-                    }
-
-                    function extractYouTubeId(input) {
-                    // If it's already just an ID, return it
-                    if (input.length === 11 && !input.includes('/') && !input.includes('?')) {
-                    return input;
-                    }
-                    // Try to extract from URL
-                    const patterns = [
-                    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-                    /^([a-zA-Z0-9_-]{11})$/
-                    ];
-                    for (const pattern of patterns) {
-                    const match = input.match(pattern);
-                    if (match) return match[1];
-                    }
-                    return null;
-                    }
-
-                    function saveYouTubeVideo() {
-                    const urlInput = document.getElementById('youtubeUrl').value.trim();
-                    const label = document.getElementById('youtubeLabel').value.trim();
-
-                    if (!urlInput || !label) {
-                    showMessage('Video ID/URL and label are required', 'error');
-                    return;
-                    }
-
-                    const videoId = extractYouTubeId(urlInput);
-                    if (!videoId) {
-                    showMessage('Invalid YouTube URL or video ID', 'error');
-                    return;
-                    }
-
-                    const video = {
-                    type: 'youtube',
-                    videoId,
-                    label
-                    };
-
-                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                    if (!appsTab.quickLaunch) appsTab.quickLaunch = [];
-
-                    if (currentEditingYouTubeIndex >= 0) {
-                    appsTab.quickLaunch[currentEditingYouTubeIndex] = video;
-                    } else {
-                    appsTab.quickLaunch.push(video);
-                    }
-
-                    renderAllViews();
-                    closeYouTubeModal();
-                    showMessage('✅ Video saved! Remember to click "Save All to Cloud"', 'success');
-                    }
-
-                    function deleteYouTubeVideo(index) {
-                    if (confirm('Are you sure you want to delete this video?')) {
-                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                    appsTab.quickLaunch.splice(index, 1);
-                    renderAllViews();
-                    showMessage('✅ Video deleted! Remember to click "Save All to Cloud"', 'success');
-                    }
-                    }
-
-                    function closeYouTubeModal() {
-                    document.getElementById('youtubeModal').classList.remove('show');
-                    }
-
-                    // ===== APPS =====
-                    function renderAppButtons() {
-                    const container = document.getElementById('appsContainer');
-                    const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
-                    const apps = appsTab?.buttons || [];
-
-                    if (apps.length === 0) {
-                    container.innerHTML = '<div class="empty-state">
-                        <div class="empty-state-icon">🎬</div>
-                        <p>No app buttons configured. Click "Add App" to get started.</p>
-                    </div>';
-                    return;
-                    }
-
-                    container.innerHTML = apps.map((app, index) => `
-                < div class= "app-card" >
-                        <div class="app-thumbnail">
-                            ${app.thumbnail ? `<img src="${app.thumbnail}" alt="${app.label || app.appName}">` : `<div>
-                                ${app.emoji || '📱'}</div>`}
-                        </div>
-                        <div class="app-info">
-                            <div class="app-label">${app.label || app.appName}</div>
-                            <div class="app-id">App ID: ${app.appId}</div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn-primary btn-sm" onclick="editAppButton(${index})">Edit</button>
-                                <button class="btn-danger btn-sm" onclick="deleteAppButton(${index})">Delete</button>
-                            </div>
-                        </div>
-                    </div >
-                `).join('');
-                    }
-
-                    function addAppButton() {
-                    currentEditingAppIndex = -1;
-                    document.getElementById('appModalTitle').textContent = 'Add App Button';
-                    document.getElementById('appName').value = '';
-                    document.getElementById('appId').value = '';
-                    document.getElementById('appEmoji').value = '';
-                    document.getElementById('appLabel').value = '';
-                    document.getElementById('appThumbnail').value = '';
-                    document.getElementById('appModal').classList.add('show');
-                    }
-
-                    function editAppButton(index) {
-                    currentEditingAppIndex = index;
-                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                    const app = appsTab.buttons[index];
-                    document.getElementById('appModalTitle').textContent = 'Edit App Button';
-                    document.getElementById('appName').value = app.appName || '';
-                    document.getElementById('appId').value = app.appId || '';
-                    document.getElementById('appEmoji').value = app.emoji || '';
-                    document.getElementById('appLabel').value = app.label || '';
-                    document.getElementById('appThumbnail').value = app.thumbnail || '';
-                    document.getElementById('appModal').classList.add('show');
-                    }
-
-                    function saveAppButton() {
-                    const appName = document.getElementById('appName').value.trim();
-                    const appId = document.getElementById('appId').value.trim();
-                    const emoji = document.getElementById('appEmoji').value.trim();
-                    const label = document.getElementById('appLabel').value.trim();
-                    const thumbnail = document.getElementById('appThumbnail').value.trim();
-
-                    if (!appName || !appId) {
-                    showMessage('App name and ID are required', 'error');
-                    return;
-                    }
-
-                    const app = {
-                    id: `${ appName.toLowerCase().replace(/[^a-z0-9]+/g, '') }Button`,
-                    emoji: emoji || '📱',
-                    label: label || appName,
-                    appId,
-                    appName
-                    };
-
-                    if (thumbnail) {
-                    app.thumbnail = thumbnail;
-                    }
-
-                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                    if (!appsTab.buttons) appsTab.buttons = [];
-
-                    if (currentEditingAppIndex >= 0) {
-                    appsTab.buttons[currentEditingAppIndex] = app;
-                    } else {
-                    appsTab.buttons.push(app);
-                    }
-
-                    renderAllViews();
-                    closeAppModal();
-                    showMessage('✅ App saved! Remember to click "Save All to Cloud"', 'success');
-                    }
-
-                    function deleteAppButton(index) {
-                    if (confirm('Are you sure you want to delete this app?')) {
-                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                    appsTab.buttons.splice(index, 1);
-                    renderAllViews();
-                    showMessage('✅ App deleted! Remember to click "Save All to Cloud"', 'success');
-                    }
-                    }
-
-                    function closeAppModal() {
-                    document.getElementById('appModal').classList.remove('show');
-                    }
-
-
-
-                    // Load passphrase from localStorage or URL
-                    const PASSPHRASE_STORAGE_KEY = 'editor_passphrase';
-
-                    function savePassphraseToStorage() {
-                    const passphrase = document.getElementById('passphrase').value.trim();
-                    if (passphrase) {
-                    localStorage.setItem(PASSPHRASE_STORAGE_KEY, passphrase);
-                    }
-                    }
-
-                    function loadPassphraseFromStorage() {
-                    const stored = localStorage.getItem(PASSPHRASE_STORAGE_KEY);
-                    if (stored) {
-                    document.getElementById('passphrase').value = stored;
-                    }
-                    }
-
-                    // Auto-save passphrase when it changes
-                    document.getElementById('passphrase').addEventListener('input', savePassphraseToStorage);
-
-                    // Load from URL (takes precedence) or localStorage
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlPassphrase = urlParams.get('passphrase');
-                    if (urlPassphrase) {
-                    document.getElementById('passphrase').value = urlPassphrase;
-                    savePassphraseToStorage();
-                    } else {
-                    loadPassphraseFromStorage();
-                    }
-
-                    // Keyboard shortcuts
-                    document.addEventListener('keydown', (e) => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                    e.preventDefault();
-                    saveAllConfigs();
-                    }
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
-                    e.preventDefault();
-                    loadAllConfigs();
-                    }
-                    });
-
-                    // ===== DEVICE LISTS =====
-                    async function loadBLEDeviceList() {
-                    const container = document.getElementById('bleDevicesList');
-                    container.innerHTML = '<p style="color: #999;">Loading BLE device list...</p>';
-
-                    try {
-                    const passphrase = document.getElementById('passphrase').value.trim();
-                    if (!passphrase) {
-                    showMessage('Please enter a passphrase first', 'error');
-                    container.innerHTML = '<p style="color: #f44336;">Error: Passphrase required</p>';
-                    return;
-                    }
-
-                    const response = await
-                    fetch(`${ API_BASE_URL } / ble - devices.json ? passphrase = ${ encodeURIComponent(passphrase) }`);
-                    if (!response.ok) {
-                    throw new Error(`Failed to load BLE devices: ${ response.statusText }`);
-                    }
-
-                    const data = await response.json();
-
-                    if (!data.devices || data.devices.length === 0) {
-                    container.innerHTML = '<p style="color: #999;">No BLE devices found. Scan from your app first.</p>';
-                    return;
-                    }
-
-                    container.innerHTML = `
-            < div style = "margin-bottom: 10px;" >
-            <strong>Last scan:</strong> ${ new Date(data.timestamp).toLocaleString() } < br >
-            <strong>Total devices:</strong> ${ data.devices.length }
-                    </div >
-                <div style="display: grid; gap: 10px;">
-                    ${data.devices.map(device => `
-                        <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                                <div>
-                                    <strong>${device.name || 'Unknown Device'}</strong><br>
-                                    <span
-                                        style="font-size: 12px; color: #666; font-family: monospace;">${device.address}</span>
-                                </div>
-                                <span
-                                    style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                                    ${device.rssi} dBm
-                                </span>
-                            </div>
-                            <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.address}')"
-                                style="font-size: 11px; padding: 4px 8px;">
-                                📋 Copy Address
-                            </button>
-                        </div>
-                        `).join('')}
-                </div>
-                    `;
-                    } catch (error) {
-                    console.error('Failed to load BLE devices:', error);
-                    container.innerHTML = `< p style = "color: #f44336;" > Error: ${ error.message }</p > `;
-                    showMessage(`Failed to load BLE devices: ${ error.message }`, 'error');
-                    }
-                    }
-
-
-
-                    function copyToClipboard(text) {
-                    navigator.clipboard.writeText(text).then(() => {
-                    showMessage('✅ Copied to clipboard!', 'success');
-                    }).catch(err => {
-                    showMessage('❌ Failed to copy', 'error');
-                    console.error('Failed to copy:', err);
-                    });
-                    }
-
-
-
-
-
-
-
-                    // Auto-save inputs on change
-                    document.addEventListener('DOMContentLoaded', () => {
-                    const pinInput = document.getElementById('parentalPinEditor');
-                    if (pinInput) {
-                    pinInput.addEventListener('input', () => {
-                    updateAppSettingsFromInputs();
-                    });
-                    }
-                    });
-
-    </script>
+        const resp = await fetch(`${API_BASE_URL}?type=app-config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${passphrase}` },
+          body: JSON.stringify(appConfig)
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        setStatus('Saved config to cloud.', 'success');
+      } catch (err) {
+        setStatus(`Failed to save: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    document.getElementById('loadBtn').addEventListener('click', loadConfig);
+    document.getElementById('saveBtn').addEventListener('click', saveConfig);
+    document.getElementById('formatBtn').addEventListener('click', () => {
+      try {
+        const parsed = JSON.parse(document.getElementById('appConfigJson').value || JSON.stringify(appConfig));
+        appConfig = parsed;
+        ensureStructure();
+        syncJsonTextarea();
+        setStatus('Formatted JSON.', 'success');
+      } catch (err) {
+        setStatus(`Invalid JSON: ${err.message}`, 'error');
+      }
+    });
+
+    document.getElementById('addVideoBtn').addEventListener('click', () => {
+      openVideoModal();
+    });
+
+    const videoModal = document.getElementById('videoModal');
+    const videoForm = document.getElementById('videoForm');
+    const videoLabelInput = document.getElementById('videoLabelInput');
+    const videoIdInput = document.getElementById('videoIdInput');
+    document.getElementById('cancelVideoBtn').addEventListener('click', closeVideoModal);
+    videoModal.addEventListener('click', (e) => { if (e.target === videoModal || e.target.classList.contains('modal-backdrop')) closeVideoModal(); });
+
+    function openVideoModal() {
+      videoLabelInput.value = '';
+      videoIdInput.value = '';
+      videoModal.classList.add('show');
+      videoLabelInput.focus();
+    }
+
+    function closeVideoModal() {
+      videoModal.classList.remove('show');
+    }
+
+    videoForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const label = videoLabelInput.value.trim() || 'New Video';
+      const videoId = videoIdInput.value.trim();
+      if (!videoId) {
+        setStatus('Enter a YouTube video ID.', 'error');
+        return;
+      }
+      const quickLaunch = getAppsTab().quickLaunch;
+      quickLaunch.push({ label, type: 'youtube', videoId });
+      renderAll();
+      closeVideoModal();
+      setStatus('Added video to quick launch.', 'success');
+    });
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.tab-content').forEach(section => section.classList.toggle('active', section.id === `${tab}-tab`));
+      });
+    });
+
+    document.getElementById('parentalPinEditor').addEventListener('input', () => {
+      syncFromInputs();
+      syncJsonTextarea();
+    });
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) document.getElementById('passphrase').value = stored;
+    renderAll();
+  </script>
 </body>
-
 </html>
