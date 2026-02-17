@@ -402,6 +402,11 @@
                         <li>The apps tab also has a <code
                                 class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">quickLaunch</code> array
                             for YouTube videos</li>
+                        <li>The disney tab can include a <code
+                                class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">quickLaunch</code> array
+                            with Disney+ items like <code
+                                class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">contentId</code> and <code
+                                class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">thumbnail</code></li>
                         <li>Refresh the page to see changes</li>
                     </ol>
                 </div>
@@ -583,6 +588,17 @@
                 </div>
             </div>
             <div id="quickLaunchGrid" class="mt-6 grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            </div>
+        </section>
+
+        <section id="disneyLaunchSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-xl md:p-8">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Disney+ Launch Lab</h2>
+                    <p class="mt-1 text-sm text-indigo-100">Test Disney+ IDs, custom launch params, and thumbnails.</p>
+                </div>
+            </div>
+            <div id="disneyLaunchGrid" class="mt-6 grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             </div>
         </section>
 

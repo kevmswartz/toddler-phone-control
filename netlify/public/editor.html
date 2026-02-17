@@ -99,6 +99,7 @@
     <nav class="tab-nav">
       <button class="tab-button active" data-tab="settings">⚙️ App Settings</button>
       <button class="tab-button" data-tab="youtube">📺 Quick Launch</button>
+      <button class="tab-button" data-tab="disney">🪄 Disney+</button>
       <button class="tab-button" data-tab="apps">🎬 App Buttons</button>
       <button class="tab-button" data-tab="json">📝 Raw JSON</button>
     </nav>
@@ -120,6 +121,15 @@
           <button class="btn-ghost" id="addVideoBtn">➕ Add Video</button>
         </div>
         <div id="quickLaunchList" class="list"></div>
+      </div>
+    </div>
+
+    <div id="disney-tab" class="tab-content">
+      <div class="card">
+        <div class="button-row" style="margin-bottom:10px;">
+          <button class="btn-ghost" id="addDisneyBtn">➕ Add Disney Item</button>
+        </div>
+        <div id="disneyLaunchList" class="list"></div>
       </div>
     </div>
 
@@ -157,10 +167,39 @@
     </form>
   </div>
 
+  <div class="modal" id="disneyModal">
+    <div class="modal-backdrop"></div>
+    <form class="modal-card" id="disneyForm">
+      <h3 style="margin-top:0; margin-bottom:10px; font-size:18px;">Add Disney+ Item</h3>
+      <div class="input-group">
+        <label for="disneyLabelInput">Label</label>
+        <input type="text" id="disneyLabelInput" placeholder="Bluey Episode" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label for="disneyContentIdInput">Disney Content ID</label>
+        <input type="text" id="disneyContentIdInput" placeholder="3jLIGMDYINqD" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label for="disneyThumbnailInput">Thumbnail URL (optional)</label>
+        <input type="text" id="disneyThumbnailInput" placeholder="https://..." autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label for="disneyParamsInput">Raw Params (optional)</label>
+        <input type="text" id="disneyParamsInput" placeholder="contentId=3jLIGMDYINqD">
+      </div>
+      <div class="button-row" style="justify-content:flex-end; margin-bottom:0;">
+        <button type="button" class="btn-ghost" id="cancelDisneyBtn">Cancel</button>
+        <button type="submit" class="btn-primary">Add Item</button>
+      </div>
+    </form>
+  </div>
+
   <script>
     const API_BASE_URL = 'https://toddler-roku.netlify.app/api/config';
     const STORAGE_KEY = 'roku_editor_passphrase';
     let appConfig = { tabs: [], settings: {} };
+    let hasLoadedCloudConfig = false;
+    let lastLoadedQuickLaunchCount = 0;
 
     function setStatus(text, type = 'info') {
       const el = document.getElementById('status');
@@ -187,6 +226,24 @@
       let tab = appConfig.tabs.find(t => t.id === 'apps');
       if (!tab) {
         tab = { id: 'apps', label: 'Roku', icon: '📺', quickLaunch: [], buttons: [] };
+        appConfig.tabs.push(tab);
+      }
+      if (!Array.isArray(tab.quickLaunch)) tab.quickLaunch = [];
+      if (!Array.isArray(tab.buttons)) tab.buttons = [];
+      return tab;
+    }
+
+    function getQuickLaunchCount(config = appConfig) {
+      if (!config || !Array.isArray(config.tabs)) return 0;
+      const appsTab = config.tabs.find(t => t && t.id === 'apps');
+      return Array.isArray(appsTab?.quickLaunch) ? appsTab.quickLaunch.length : 0;
+    }
+
+    function getDisneyTab() {
+      ensureStructure();
+      let tab = appConfig.tabs.find(t => t.id === 'disney');
+      if (!tab) {
+        tab = { id: 'disney', label: 'Disney+', icon: '🪄', quickLaunch: [], buttons: [] };
         appConfig.tabs.push(tab);
       }
       if (!Array.isArray(tab.quickLaunch)) tab.quickLaunch = [];
@@ -250,6 +307,63 @@
       });
     }
 
+    function renderDisneyLaunch() {
+      const list = document.getElementById('disneyLaunchList');
+      const quickLaunch = getDisneyTab().quickLaunch;
+      list.innerHTML = '';
+      if (!quickLaunch.length) {
+        const empty = document.createElement('div');
+        empty.className = 'subtitle';
+        empty.textContent = 'No Disney+ items yet. Add IDs and test formats in the app.';
+        list.appendChild(empty);
+        return;
+      }
+      quickLaunch.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'quick-item';
+        row.style.gridTemplateColumns = '1fr 1fr 1fr 1fr auto';
+
+        const labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.placeholder = 'Label';
+        labelInput.value = item.label || '';
+        labelInput.addEventListener('input', () => { item.label = labelInput.value; syncJsonTextarea(); });
+
+        const contentIdInput = document.createElement('input');
+        contentIdInput.type = 'text';
+        contentIdInput.placeholder = 'Disney content ID';
+        contentIdInput.value = item.contentId || '';
+        contentIdInput.addEventListener('input', () => { item.contentId = contentIdInput.value; syncJsonTextarea(); });
+
+        const thumbInput = document.createElement('input');
+        thumbInput.type = 'text';
+        thumbInput.placeholder = 'Thumbnail URL';
+        thumbInput.value = item.thumbnail || '';
+        thumbInput.addEventListener('input', () => { item.thumbnail = thumbInput.value; syncJsonTextarea(); });
+
+        const paramsInput = document.createElement('input');
+        paramsInput.type = 'text';
+        paramsInput.placeholder = 'Raw params (optional)';
+        paramsInput.value = item.params || '';
+        paramsInput.addEventListener('input', () => { item.params = paramsInput.value; syncJsonTextarea(); });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-ghost';
+        removeBtn.textContent = '🗑️';
+        removeBtn.addEventListener('click', () => {
+          quickLaunch.splice(index, 1);
+          renderAll();
+        });
+
+        row.appendChild(labelInput);
+        row.appendChild(contentIdInput);
+        row.appendChild(thumbInput);
+        row.appendChild(paramsInput);
+        row.appendChild(removeBtn);
+        list.appendChild(row);
+      });
+    }
+
     function renderAppButtons() {
       const list = document.getElementById('appButtonsList');
       list.innerHTML = '';
@@ -294,6 +408,7 @@
     function renderAll() {
       renderAppSettings();
       renderQuickLaunch();
+      renderDisneyLaunch();
       renderAppButtons();
       syncJsonTextarea();
     }
@@ -313,6 +428,8 @@
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         appConfig = await resp.json();
         ensureStructure();
+        hasLoadedCloudConfig = true;
+        lastLoadedQuickLaunchCount = getQuickLaunchCount(appConfig);
         renderAll();
         localStorage.setItem(STORAGE_KEY, passphrase);
         setStatus('Loaded config from cloud.', 'success');
@@ -336,12 +453,28 @@
           setStatus(`Invalid JSON: ${err.message}`, 'error');
           return;
         }
+
+        if (!hasLoadedCloudConfig) {
+          setStatus('Load config first before saving, so you do not overwrite cloud data accidentally.', 'error');
+          return;
+        }
+
+        const currentQuickLaunchCount = getQuickLaunchCount(appConfig);
+        if (lastLoadedQuickLaunchCount > 0 && currentQuickLaunchCount === 0) {
+          const confirmed = window.confirm('This save removes all Quick Launch items. Continue?');
+          if (!confirmed) {
+            setStatus('Save cancelled.', 'info');
+            return;
+          }
+        }
+
         const resp = await fetch(`${API_BASE_URL}?type=app-config`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${passphrase}` },
           body: JSON.stringify(appConfig)
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        lastLoadedQuickLaunchCount = currentQuickLaunchCount;
         setStatus('Saved config to cloud.', 'success');
       } catch (err) {
         setStatus(`Failed to save: ${err.message}`, 'error');
@@ -365,6 +498,9 @@
 
     document.getElementById('addVideoBtn').addEventListener('click', () => {
       openVideoModal();
+    });
+    document.getElementById('addDisneyBtn').addEventListener('click', () => {
+      openDisneyModal();
     });
 
     const videoModal = document.getElementById('videoModal');
@@ -398,6 +534,52 @@
       renderAll();
       closeVideoModal();
       setStatus('Added video to quick launch.', 'success');
+    });
+
+    const disneyModal = document.getElementById('disneyModal');
+    const disneyForm = document.getElementById('disneyForm');
+    const disneyLabelInput = document.getElementById('disneyLabelInput');
+    const disneyContentIdInput = document.getElementById('disneyContentIdInput');
+    const disneyThumbnailInput = document.getElementById('disneyThumbnailInput');
+    const disneyParamsInput = document.getElementById('disneyParamsInput');
+    document.getElementById('cancelDisneyBtn').addEventListener('click', closeDisneyModal);
+    disneyModal.addEventListener('click', (e) => { if (e.target === disneyModal || e.target.classList.contains('modal-backdrop')) closeDisneyModal(); });
+
+    function openDisneyModal() {
+      disneyLabelInput.value = '';
+      disneyContentIdInput.value = '';
+      disneyThumbnailInput.value = '';
+      disneyParamsInput.value = '';
+      disneyModal.classList.add('show');
+      disneyLabelInput.focus();
+    }
+
+    function closeDisneyModal() {
+      disneyModal.classList.remove('show');
+    }
+
+    disneyForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const label = disneyLabelInput.value.trim() || 'Disney+ Item';
+      const contentId = disneyContentIdInput.value.trim();
+      const thumbnail = disneyThumbnailInput.value.trim();
+      const params = disneyParamsInput.value.trim();
+
+      if (!contentId && !params) {
+        setStatus('Enter a Disney content ID or raw params.', 'error');
+        return;
+      }
+
+      const item = { label, type: 'disney' };
+      if (contentId) item.contentId = contentId;
+      if (thumbnail) item.thumbnail = thumbnail;
+      if (params) item.params = params;
+
+      const quickLaunch = getDisneyTab().quickLaunch;
+      quickLaunch.push(item);
+      renderAll();
+      closeDisneyModal();
+      setStatus('Added Disney+ item.', 'success');
     });
 
     document.querySelectorAll('.tab-button').forEach(btn => {

@@ -55,6 +55,12 @@ const TAB_DEFINITIONS = {
         defaultIcon: '📺',
         sections: ['quickLaunchSection', 'connectionSection', 'nowPlayingSection', 'appsSection', 'deepLinkSection']
     },
+    disney: {
+        id: 'disney',
+        defaultLabel: 'Disney+',
+        defaultIcon: '🪄',
+        sections: ['disneyLaunchSection']
+    },
 
 
     macros: {
@@ -76,6 +82,7 @@ let macroStepsDraft = [];
 let macros = [];
 let toddlerSpecialButtons = [];
 let toddlerQuickLaunchItems = [];
+let toddlerDisneyLaunchItems = [];
 let installedApps = [];
 let installedAppMap = new Map();
 let toddlerContentSource = { type: 'bundled', path: APP_CONFIG_PATH };
@@ -248,7 +255,7 @@ async function isOnWifi() {
 function filterTabsForEnvironment(tabs) {
     if (isNativeRuntime) return tabs;
 
-    const allowedWebTabs = new Set(['remote', 'apps']);
+    const allowedWebTabs = new Set(['remote', 'apps', 'disney']);
     const filtered = tabs.filter(tab => allowedWebTabs.has(tab.id));
 
     // If the config only had non-Roku tabs, fall back to showing the remote tab
@@ -280,6 +287,7 @@ function getTabsForRendering() {
         tabs = [
             buildTabFromDefinition(TAB_DEFINITIONS.remote),
             buildTabFromDefinition(TAB_DEFINITIONS.apps),
+            buildTabFromDefinition(TAB_DEFINITIONS.disney),
 
         ];
     }
@@ -291,7 +299,8 @@ function getTabsForRendering() {
     if (!tabs || tabs.length === 0) {
         tabs = filterTabsForEnvironment([
             buildTabFromDefinition(TAB_DEFINITIONS.remote),
-            buildTabFromDefinition(TAB_DEFINITIONS.apps)
+            buildTabFromDefinition(TAB_DEFINITIONS.apps),
+            buildTabFromDefinition(TAB_DEFINITIONS.disney)
         ]);
     }
 
@@ -501,36 +510,20 @@ function loadCurrentConfigIntoEditor() {
     const textarea = document.getElementById('cloudConfigJson');
     if (!textarea) return;
 
-    // Use the last loaded config, or try to get from toddlerSpecialButtons
-    let config;
-    if (currentLoadedConfig) {
-        config = currentLoadedConfig;
-    } else {
-        // Rebuild config from current state
-        config = {
-            tabs: [
-                {
-                    id: 'remote',
-                    label: 'Remote',
-                    icon: '🎮',
-                    buttons: toddlerSpecialButtons.filter(b => b.category === 'kidMode-remote' || !b.category)
-                },
-                {
-                    id: 'apps',
-                    label: 'Roku',
-                    icon: '📺',
-                    buttons: toddlerSpecialButtons.filter(b => b.category === 'kidMode-content'),
-                    quickLaunch: toddlerQuickLaunchItems
-                },
-
-            ].filter(tab => tab.buttons.length > 0 || tab.quickLaunch?.length > 0),
-            version: '1.0.0',
-            lastUpdated: new Date().toISOString()
-        };
+    if (!currentLoadedConfig) {
+        showStatus('No loaded config available yet. Refresh from cloud/local first, then load into editor.', 'error');
+        return;
     }
 
-    textarea.value = JSON.stringify(config, null, 2);
+    textarea.value = JSON.stringify(currentLoadedConfig, null, 2);
     showStatus('Current config loaded into editor. Make your changes and click Save to Cloud.', 'info');
+}
+
+function getQuickLaunchCountFromConfig(config) {
+    if (!config || !Array.isArray(config.tabs)) return 0;
+    const appsTab = config.tabs.find(tab => tab && tab.id === 'apps');
+    if (!appsTab || !Array.isArray(appsTab.quickLaunch)) return 0;
+    return appsTab.quickLaunch.length;
 }
 
 function validateConfigJson() {
@@ -584,6 +577,28 @@ async function saveConfigToCloud() {
     }
 
     try {
+        const cloudUrl = buildCloudConfigUrl(passphrase);
+        let existingQuickLaunchCount = 0;
+        if (cloudUrl) {
+            try {
+                const existingCloudConfig = await fetchToddlerContentFromUrl(cloudUrl);
+                existingQuickLaunchCount = getQuickLaunchCountFromConfig(existingCloudConfig);
+            } catch (readError) {
+                console.warn('Could not read existing cloud config before save:', readError);
+            }
+        }
+
+        const nextQuickLaunchCount = getQuickLaunchCountFromConfig(config);
+        if (existingQuickLaunchCount > 0 && nextQuickLaunchCount === 0) {
+            const shouldOverwrite = window.confirm(
+                `This save will remove all ${existingQuickLaunchCount} Quick Launch items for this passphrase. Continue?`
+            );
+            if (!shouldOverwrite) {
+                showStatus('Save cancelled. Cloud config unchanged.', 'info');
+                return;
+            }
+        }
+
         showStatus('Saving to cloud...', 'info');
 
         const response = await fetch(NETLIFY_CONFIG_API_BASE, {
@@ -632,6 +647,8 @@ function normalizeQuickLaunchItem(item) {
     if (!normalized.id) {
         if (normalized.type === 'youtube' && normalized.videoId) {
             normalized.id = `yt-${normalized.videoId}`;
+        } else if (normalized.type === 'disney' && normalized.contentId) {
+            normalized.id = `disney-${normalized.contentId}`;
         } else {
             // Fallback: generate from label or random
             normalized.id = normalized.label ? `ql-${normalized.label.toLowerCase().replace(/\s+/g, '-')}` : `ql-${Date.now()}`;
@@ -644,6 +661,80 @@ function normalizeQuickLaunchItem(item) {
     }
 
     return normalized;
+}
+
+function cloneJson(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+
+function ensureCoreTabs(tabs = []) {
+    const safeTabs = Array.isArray(tabs)
+        ? tabs.filter(tab => tab && typeof tab === 'object' && typeof tab.id === 'string')
+        : [];
+    const byId = new Map(safeTabs.map(tab => [tab.id, tab]));
+
+    for (const coreId of ['remote', 'apps']) {
+        if (!byId.has(coreId)) {
+            byId.set(coreId, {
+                id: coreId,
+                label: TAB_DEFINITIONS[coreId]?.defaultLabel || coreId,
+                icon: TAB_DEFINITIONS[coreId]?.defaultIcon || '📱',
+                buttons: [],
+                quickLaunch: coreId === 'apps' ? [] : undefined
+            });
+        }
+    }
+
+    const orderedIds = ['remote', 'apps', 'disney', 'macros'];
+    const orderedTabs = [];
+    for (const id of orderedIds) {
+        const tab = byId.get(id);
+        if (tab) {
+            orderedTabs.push(tab);
+            byId.delete(id);
+        }
+    }
+
+    for (const tab of byId.values()) {
+        orderedTabs.push(tab);
+    }
+
+    return orderedTabs;
+}
+
+function mergeConfigWithLocalFallback(primaryData, fallbackData) {
+    const merged = cloneJson(primaryData || {});
+    const fallback = fallbackData && typeof fallbackData === 'object' ? fallbackData : {};
+
+    const mergedTabs = ensureCoreTabs(merged.tabs);
+    const fallbackTabs = ensureCoreTabs(fallback.tabs);
+    const fallbackById = new Map(fallbackTabs.map(tab => [tab.id, tab]));
+
+    for (const tab of mergedTabs) {
+        const fallbackTab = fallbackById.get(tab.id);
+        if (!fallbackTab) continue;
+
+        if (!Array.isArray(tab.buttons) && Array.isArray(fallbackTab.buttons)) {
+            tab.buttons = cloneJson(fallbackTab.buttons);
+        }
+        if (!Array.isArray(tab.quickLaunch) && Array.isArray(fallbackTab.quickLaunch)) {
+            tab.quickLaunch = cloneJson(fallbackTab.quickLaunch);
+        }
+    }
+
+    if (!merged.settings || typeof merged.settings !== 'object') {
+        merged.settings = {};
+    }
+    if (fallback.settings && typeof fallback.settings === 'object') {
+        for (const [key, value] of Object.entries(fallback.settings)) {
+            if (merged.settings[key] === undefined) {
+                merged.settings[key] = value;
+            }
+        }
+    }
+
+    merged.tabs = mergedTabs;
+    return merged;
 }
 
 function applyToddlerContent(data) {
@@ -661,13 +752,14 @@ function applyToddlerContent(data) {
     }
 
     // Extract tabs and buttons from the unified config structure
-    const tabs = Array.isArray(data?.tabs) ? data.tabs : [];
+    const tabs = ensureCoreTabs(Array.isArray(data?.tabs) ? data.tabs : []);
 
     // Store tabs config for navigation
     tabsConfig = { tabs };
 
     const remoteTab = tabs.find(tab => tab.id === 'remote');
     const appsTab = tabs.find(tab => tab.id === 'apps');
+    const disneyTab = tabs.find(tab => tab.id === 'disney');
 
     console.log('[Config] Apps tab found:', !!appsTab, 'buttons:', appsTab?.buttons?.length, 'quickLaunch:', appsTab?.quickLaunch?.length);
 
@@ -680,6 +772,12 @@ function applyToddlerContent(data) {
     toddlerQuickLaunchItems = rawQuickLaunch.map(normalizeQuickLaunchItem);
     console.log('[Config] QuickLaunch items normalized:', toddlerQuickLaunchItems.length);
 
+    const rawDisneyLaunch = Array.isArray(disneyTab?.quickLaunch) ? disneyTab.quickLaunch : [];
+    toddlerDisneyLaunchItems = rawDisneyLaunch.map(item =>
+        normalizeQuickLaunchItem({ ...item, type: item?.type || 'disney' })
+    );
+    console.log('[Config] Disney launch items normalized:', toddlerDisneyLaunchItems.length);
+
     // Combine remote and apps buttons for rendering
     toddlerSpecialButtons = [...remoteButtons, ...appsButtons];
 
@@ -687,6 +785,7 @@ function applyToddlerContent(data) {
 
 
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
+    renderDisneyLaunchSettings(toddlerDisneyLaunchItems);
 
     // Refresh tab UI now that config is applied
     void renderBottomTabs();
@@ -978,8 +1077,10 @@ async function loadToddlerContent({ forceRefresh = false } = {}) {
         if (cloudUrl) {
             try {
                 const remoteData = await fetchToddlerContentFromUrl(cloudUrl);
+                const localFallback = await fetchLocalToddlerContent();
+                const mergedData = mergeConfigWithLocalFallback(remoteData, localFallback?.data);
                 setToddlerContentSource({ type: 'cloud', passphrase: '***' }); // Don't expose passphrase
-                applyToddlerContent(remoteData);
+                applyToddlerContent(mergedData);
                 showStatus('Kid-mode buttons loaded from cloud.', 'success');
                 return;
             } catch (error) {
@@ -1346,19 +1447,37 @@ function renderQuickLaunch(items) {
 }
 
 function renderQuickLaunchSettings(items) {
-    const section = document.getElementById('quickLaunchSection');
-    const grid = document.getElementById('quickLaunchGrid');
+    renderLaunchGridSection('quickLaunchSection', 'quickLaunchGrid', items, {
+        emptyMessage: '[QuickLaunch] Section or grid not found'
+    });
+}
+
+function renderDisneyLaunchSettings(items) {
+    renderLaunchGridSection('disneyLaunchSection', 'disneyLaunchGrid', items, {
+        emptyMessage: '[DisneyLaunch] Section or grid not found'
+    });
+}
+
+function renderLaunchGridSection(sectionId, gridId, items, options = {}) {
+    const section = document.getElementById(sectionId);
+    const grid = document.getElementById(gridId);
     if (!section || !grid) {
-        console.log('[QuickLaunch] Section or grid not found', { section: !!section, grid: !!grid });
+        console.log(options.emptyMessage || '[Launch] Section or grid not found', { section: !!section, grid: !!grid });
         return;
     }
 
     grid.innerHTML = '';
 
     const launches = Array.isArray(items) ? [...items] : [];
-    console.log('[QuickLaunch] Rendering items:', launches.length);
+    console.log(`[Launch] Rendering ${sectionId} items:`, launches.length);
     if (launches.length === 0) {
-        section.classList.add('hidden');
+        const empty = document.createElement('div');
+        empty.className = 'col-span-full rounded-2xl bg-white/10 px-4 py-5 text-sm text-indigo-100';
+        empty.textContent = sectionId === 'disneyLaunchSection'
+            ? 'No Disney+ test items yet. Add them in the config editor.'
+            : 'No quick launch items yet. Add YouTube videos in the config editor.';
+        grid.appendChild(empty);
+        section.classList.remove('hidden');
         return;
     }
 
@@ -1419,6 +1538,11 @@ function handleQuickLaunch(item) {
         return;
     }
 
+    if (item.type === 'disney' && (item.contentId || item.params)) {
+        launchDisneyQuickItem(item);
+        return;
+    }
+
     const handlerName = item.handler;
     if (handlerName && typeof window[handlerName] === 'function') {
         const args = Array.isArray(item.args) ? item.args : item.args !== undefined ? [item.args] : [];
@@ -1433,6 +1557,37 @@ function handleQuickLaunch(item) {
     }
 
     showStatus('Quick launch is missing an action.', 'error');
+}
+
+async function launchDisneyQuickItem(item = {}) {
+    const appId = '291097';
+    const params = typeof item.params === 'string' ? item.params.trim() : '';
+
+    try {
+        if (params) {
+            await launchAppWithParams(appId, params);
+            showStatus(`Launching Disney+ with params: ${params}`, 'info');
+            setTimeout(() => checkNowPlaying(), 2000);
+            return;
+        }
+
+        const contentId = typeof item.contentId === 'string' ? item.contentId.trim() : '';
+        if (!contentId) {
+            showStatus('Disney+ item is missing a content ID.', 'error');
+            return;
+        }
+
+        const contentType = typeof item.contentType === 'string' && item.contentType.trim()
+            ? item.contentType.trim()
+            : 'movie';
+        const deepLinkParams = `contentId=${encodeURIComponent(contentId)}&mediaType=${encodeURIComponent(contentType)}`;
+
+        await launchAppWithParams(appId, deepLinkParams);
+        showStatus(`Launching Disney+ (${contentType}) with ${deepLinkParams}`, 'info');
+        setTimeout(() => checkNowPlaying(), 2000);
+    } catch (error) {
+        showStatus(`Failed to launch Disney+: ${error.message}`, 'error');
+    }
 }
 
 function speakTts(message = '') {

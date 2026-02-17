@@ -184,6 +184,19 @@
           "label": "Where You're From"
         }
       ]
+    },
+    {
+      "id": "disney",
+      "label": "Disney+",
+      "icon": "\ud83e\uddda",
+      "quickLaunch": [
+        {
+          "type": "disney",
+          "label": "Mandalorian (Test)",
+          "contentId": "3jLIGMDYINqD",
+          "contentType": "movie"
+        }
+      ]
     }
   ]
 }
