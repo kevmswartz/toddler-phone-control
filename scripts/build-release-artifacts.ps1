@@ -34,8 +34,45 @@ function Invoke-CommandChecked {
     }
 }
 
+function Assert-PathExists {
+    param(
+        [Parameter(Mandatory)] [string]$Path,
+        [Parameter(Mandatory)] [string]$Message
+    )
+
+    if (-not (Test-Path $Path)) {
+        throw $Message
+    }
+}
+
+function Assert-CommandAvailable {
+    param(
+        [Parameter(Mandatory)] [string]$CommandName
+    )
+
+    if (-not (Get-Command $CommandName -ErrorAction SilentlyContinue)) {
+        throw "Required command '$CommandName' is not available in PATH."
+    }
+}
+
+Write-Host "Running preflight checks..." -ForegroundColor Cyan
+Assert-CommandAvailable -CommandName "npm"
+Assert-CommandAvailable -CommandName "npx"
+
+if (-not $Env:ANDROID_HOME) {
+    throw "ANDROID_HOME is not set. Run scripts/setup-android-env.ps1 or set ANDROID_HOME manually."
+}
+
+Assert-PathExists -Path $KeystorePath -Message "Keystore not found at $KeystorePath."
+
+$ApkSigner = Join-Path $Env:ANDROID_HOME "build-tools\$BuildToolsVersion\apksigner.bat"
+Assert-PathExists -Path $ApkSigner -Message "apksigner not found at $ApkSigner. Adjust build-tools version or pass -BuildToolsVersion."
+
 Write-Host "Building desktop release..." -ForegroundColor Cyan
 Invoke-CommandChecked -Command "npm" -Arguments @("run", "tauri:build") -WorkDir "$PWD"
+
+$DistIndex = Join-Path $PWD "dist\index.html"
+Assert-PathExists -Path $DistIndex -Message "dist/index.html missing after build. Ensure npm run build produced web assets."
 
 $RawExe = Join-Path $PWD "src-tauri\target\release\roku-control-app.exe"
 if (Test-Path $RawExe) {
@@ -54,6 +91,9 @@ if (Test-Path $RawExe) {
 Write-Host "Copying dist assets to Android..." -ForegroundColor Cyan
 & "$PWD\scripts\copy-assets-to-android.ps1"
 
+$AndroidAssetsIndex = Join-Path $PWD "src-tauri\gen\android\app\src\main\assets\index.html"
+Assert-PathExists -Path $AndroidAssetsIndex -Message "Android assets index.html missing at $AndroidAssetsIndex after copy."
+
 Write-Host "Building Android release (unsigned)..." -ForegroundColor Cyan
 [Environment]::SetEnvironmentVariable("TAURI_SKIP_VERSION_CHECK", "1", "Process")
 $targets = ($AndroidTargets -split ',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
@@ -67,15 +107,6 @@ Invoke-CommandChecked -Command "npx" -Arguments $targetArgs -WorkDir "$PWD"
 $UnsignedApk = Get-ChildItem -Path "$PWD\src-tauri\gen\android\app\build\outputs\apk" -Filter "*-unsigned.apk" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $UnsignedApk) {
     throw "Unable to locate an unsigned APK in outputs/apk/."
-}
-
-if (-not (Test-Path $KeystorePath)) {
-    throw "Keystore not found at $KeystorePath."
-}
-
-$ApkSigner = Join-Path $Env:ANDROID_HOME "build-tools\$BuildToolsVersion\apksigner.bat"
-if (-not (Test-Path $ApkSigner)) {
-    throw "apksigner not found at $ApkSigner. Adjust build-tools version or pass -BuildToolsVersion."
 }
 
 Write-Host "Signing APK..." -ForegroundColor Cyan
